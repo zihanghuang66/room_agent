@@ -1,0 +1,21 @@
+{
+  "version": "0.1.2",
+  "changes": {
+    "src/litereality_agent/room_ops/rendering/room_render/render_vs_capture.py": {
+      "before": "f1222d8d3c0c8297d952ebd3e5c2ade72e40c328bff84d14511c2b0986eae2ab",
+      "after": "7a83beb0c7d8a16c9cb15339ca7e522237e57f2ac9567dc34b3a78187f908b53"
+    },
+    "src/litereality_agent/agent/author.py": {
+      "before": "e9ba01b5c20cc1110e8ccee9dc7a8dfe545cd2729be0be75801f167dc242d73d",
+      "after": "6094ab73f8a13be1273e87669d9e247495b67dd10f40f24f9a7d769e369c79cc"
+    },
+    "src/litereality_agent/pipeline/scene_init/reconstruct/flow.py": {
+      "before": "8264097c70bf18232c324956463a99808f10f45d0fa03ddf3195c7af84089ceb",
+      "after": "bbc6e22d66839efb3d2fbb2cd748d32e64fca711bad9a4727af24fc0eed2be4f"
+    },
+    "src/litereality_agent/pipeline/realism_authoring/acceptance.py": {
+      "before": "d917aed28d7b373f003645b03285bbfd3d76934c25ff4c4b554b95c5ce673029",
+      "after": "eddbf82c405b2f43b734965435c174e9a254a003b4da8d3322ab5520ac16fcf3"
+    }
+  }
+}

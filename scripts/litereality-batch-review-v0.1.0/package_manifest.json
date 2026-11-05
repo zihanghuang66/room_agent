@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "upstream_revision": "28ffe1fd4a1b03c93f1877a33a8bc9b806f72fe1",
+  "app_sha256": "8748b08b2ed7790a7b63f389a523a86707b23b8adb6522810b40e401f194fc94",
+  "files": {
+    "batch_core.py": "cbe77610fae7c28a96f00e5928e5d2de51146609e01c53c74f345de8cbd19b8a",
+    "batch_io.py": "6d2ec37e04bc0b1dd3b341150254970feb5b4ee571cff8cdf9bcdc03a42170e5",
+    "agent_session.py": "546c6572cf5ac4d11fa27979ce77d1949e2629d589541277da54b9522a6ec5a8",
+    "worker.py": "fb720dbc1ff81eb76e1196ad39cbe8e50acb838a3bc9371bfca9acd60d89cce1",
+    "run_batches.py": "8f21f75582e3dd269dadfb6eab5d064609b5d989879663f4128c28e292821bcd",
+    "build_saved.py": "06d9b5438cec0259ca91bb0bbcc7f29171ff5cd8cb26897a9091676457717f32",
+    "run.sh": "e5543ca67eb171212354febea1287015f6c6b70e960981fe2afab881d23819a8",
+    "run_room_004.sh": "5578683d647a8c347c8f8ea08aa5c51faf1fc45802470ebaf555e5e2727edc31",
+    "full_support.py": "7cb1c4f0a831306a724392cec55645ce3d3237cdb7a1bb2c6156f99d280918e2",
+    "common.py": "516fbd805b12c4d75d3054b5d1e19e55f0419017b0bc72a6fa9752608816f6b0",
+    "runtime.py": "2845ad2a73db68b7420f6150b6f8b58e521a7ea6b883babf4cef2963ca96648c",
+    "verify_export.py": "4fd523449f0d56335b5dff09fbaed4ecd52dd7e0f91987fb445332d7c0bf2c11",
+    "texture_rebase.py": "ed7e7a7931e542aa3dd9dc8c77de56cad05673cbb1c26df84ce0d49686958332",
+    "app.tar.gz": "8748b08b2ed7790a7b63f389a523a86707b23b8adb6522810b40e401f194fc94",
+    "app.sha256": "0166971d578d711740cffc3c8603e80d0abb2a37a9135ea4a6f834519a7ef5f8",
+    "使用说明.md": "0b3d51f320d73f6eb9083eeed6350df7bf9c411d7c500d119d9a7454df6e1e3e",
+    "tests/test_batch_integration.py": "845f7e8feb5ea0a01fd9bce0edd696ea51e3e3361b9528032a99961b0a9a4fdb",
+    "tests/test_batch_review.py": "3bf1de09f9359befdfa1b1400cb366505b65f9112c0beab85cc50afd3309a4c1"
+  }
+}

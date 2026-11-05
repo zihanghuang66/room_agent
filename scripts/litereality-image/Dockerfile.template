@@ -1,0 +1,119 @@
+# Room LiteReality-Agent environment recipe v0.1.3, linux/amd64.
+# Standalone Dockerfile: no COPY/ADD, local archives or credentials required.
+# Embedded scripts are available in the companion review bundle.
+# Build is NOT an end-to-end scene validation. Run room-check after GPU allocation.
+ARG BASE_IMAGE=@@BASE_IMAGE@@
+FROM ${BASE_IMAGE}
+USER root
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN set -eu; cat /etc/os-release; \
+    test "$(uname -m)" = x86_64; . /etc/os-release; \
+    if [ "$ID" != ubuntu ] || [ "$VERSION_ID" != 22.04 ]; then \
+      echo 'ERROR: This school-image adaptation requires Ubuntu 22.04 x86_64. Return this build log.' >&2; exit 1; \
+    fi; \
+    mkdir -p /opt/room/build-info; cat /etc/os-release > /opt/room/build-info/base-os-release.txt; \
+    if [ -x /usr/local/cuda/bin/nvcc ]; then /usr/local/cuda/bin/nvcc --version | tee /opt/room/build-info/base-nvcc.txt; fi
+LABEL org.opencontainers.image.title="Room LiteReality-Agent" \
+      org.opencontainers.image.version="0.1.2" \
+      org.opencontainers.image.description="Pinned Codex adapter, Blender and local DINO/TRELLIS environment; GPU runtime validation required"
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 PYTHONNOUSERSITE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 UV_NO_CACHE=1 UV_NO_CONFIG=1 UV_PYTHON_DOWNLOADS=never UV_HTTP_TIMEOUT=120 \
+    CUDA_HOME=/usr/local/cuda-12.4 \
+    PATH=/opt/room/bootstrap/bin:/opt/room/bin:/usr/local/cuda-12.4/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    PYTHONPATH="" VIRTUAL_ENV="" PIP_CONSTRAINT="" PIP_BUILD_CONSTRAINT="" \
+    LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+RUN test "$(uname -m)" = x86_64 && \
+    apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates curl git git-lfs xz-utils unzip bzip2 tini ripgrep \
+      openssh-client openssh-server tmux zsh rsync vim-tiny nano less htop jq \
+      procps iproute2 iputils-ping dnsutils ncurses-bin ncurses-term locales \
+      build-essential cmake pkg-config ffmpeg python3.10 python3.10-dev python3.10-venv python3-pip \
+      libjpeg-dev zlib1g-dev libpng-dev libwebp-dev libegl1 libegl-mesa0 libegl1-mesa-dev \
+      libgl1 libgl1-mesa-dev libopengl0 libglu1-mesa libglib2.0-0 libgomp1 \
+      libx11-6 libxext6 libxi6 libxrender1 libxfixes3 libxxf86vm1 libxkbcommon0 \
+      libsm6 libice6 libdbus-1-3 libxcursor1 libxinerama1 libxrandr2 libasound2 libfontconfig1 libfreetype6 && \
+    rm -rf /var/lib/apt/lists/* && rm -f /etc/ssh/ssh_host_* && \
+    locale-gen en_US.UTF-8 && \
+    /usr/bin/python3.10 -m venv /opt/room/bootstrap && \
+    /opt/room/bootstrap/bin/python -m pip --isolated install --no-cache-dir --index-url https://pypi.org/simple uv==0.9.26
+
+# Payload SHA256: @@PAYLOAD_SHA256@@
+@@PAYLOAD_INSTALL@@
+
+# Match the cu124 worker wheels; do not compile them against the base image's CUDA 12.5.
+RUN bash /opt/room/image/cuda-toolkit.sh
+
+RUN tic -x -o /usr/share/terminfo /opt/room/image/ghostty.terminfo && \
+    infocmp -x xterm-ghostty > /dev/null && infocmp tmux-256color > /dev/null && \
+    install -m 644 /opt/room/image/tmux.conf /etc/tmux.conf && \
+    ssh -V && tmux -V
+
+RUN python3.10 /opt/room/image/install.py core
+
+# Apply the download fix after the already-successful v0.1.2 layers, preserving their cache keys.
+@@PATCH_INSTALL@@
+RUN python3.10 /opt/room/image/install.py tools
+RUN python3.10 /opt/room/image/install.py gpu-python
+
+# Compile on CPU build workers with nvcc; no nvidia-smi or GPU allocation needed for compilation.
+# These targets cover A100, RTX 3090 and RTX 4090. Runtime GPU operations are checked separately.
+ARG CUDA_ARCH_LIST="8.0;8.6;8.9+PTX"
+ARG BUILD_JOBS=2
+ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST} MAX_JOBS=${BUILD_JOBS}
+RUN python3.10 /opt/room/image/install.py native trellis
+RUN python3.10 /opt/room/image/install.py native utils3d
+RUN python3.10 /opt/room/image/install.py native nvdiffrast
+RUN python3.10 /opt/room/image/install.py native nvdiffrec
+RUN python3.10 /opt/room/image/install.py native cumesh
+RUN python3.10 /opt/room/image/install.py native flexgemm
+RUN python3.10 /opt/room/image/install.py o-voxel
+
+# Installation is outside the persistent project mount, which otherwise hides baked files.
+# Do not bake auth, API keys, private scans, host GPU drivers or GPU selection into the image.
+ENV PATH=/opt/room/envs/app/bin:/opt/room/bin:/opt/room/bootstrap/bin:/usr/local/bin:/usr/local/cuda-12.4/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin \
+    LANG=en_US.UTF-8 \
+    PYTHONPATH=/opt/room/app/src \
+    ROOM_RETURN_OUTPUT=/yinxin/projects/room/return_output \
+    LR_REPO_ROOT=/yinxin/projects/room/return_output/litereality_workspace \
+    LR_SCANS_DIR=/yinxin/projects/room/data/raw \
+    LITEREALITY_OUTPUT=/yinxin/projects/room/return_output/litereality_workspace/run/object_init \
+    LITEREALITY_FINAL=/yinxin/projects/room/return_output/litereality_workspace/run/final \
+    LITEREALITY_WEIGHTS=/yinxin/projects/room/return_output/cache/litereality-models \
+    LITEREALITY_DINOV3=/yinxin/projects/room/return_output/cache/litereality-models/dinov3 \
+    HF_HOME=/yinxin/projects/room/return_output/cache/litereality-models \
+    TORCH_HOME=/yinxin/projects/room/return_output/cache/torch \
+    TORCH_EXTENSIONS_DIR=/yinxin/projects/room/return_output/cache/torch-extensions \
+    TRITON_CACHE_DIR=/yinxin/projects/room/return_output/cache/triton \
+    XDG_CACHE_HOME=/yinxin/projects/room/return_output/cache/xdg \
+    MPLCONFIGDIR=/yinxin/projects/room/return_output/cache/matplotlib \
+    NPM_CONFIG_CACHE=/yinxin/projects/room/return_output/cache/npm \
+    FLEX_GEMM_AUTOTUNE_CACHE_PATH=/yinxin/projects/room/return_output/cache/flex-gemm/autotune_cache.json \
+    LR_DINO_BACKEND=local LR_DINO_PYTHON=/opt/room/envs/gpu/bin/python \
+    LR_DINO_MODEL=/yinxin/projects/room/return_output/cache/litereality-models/grounding-dino \
+    LR_DINO_EMBED_MODEL=/yinxin/projects/room/return_output/cache/litereality-models/dinov2 \
+    LITEREALITY_TRELLIS_PYTHON=/opt/room/envs/gpu/bin/python \
+    LITEREALITY_TRELLIS_LAUNCHER=/opt/room/image/trellis_launcher.py \
+    LITEREALITY_BLENDER=/opt/room/tools/blender/blender \
+    LR_AGENT_PROVIDER=codex LR_AUTHOR_PROVIDER=codex LR_MATERIALS_PROVIDER=codex \
+    LR_QUALITY_PROVIDER=codex LR_REFINE_PROVIDER=codex LR_PROCEDURAL_PROVIDER=codex \
+    LR_CLASSIFY_PROVIDER=codex HARNESS_VLM=codex LR_CODEX_MODEL=gpt-6-astra LR_CODEX_EFFORT=high \
+    ATTN_BACKEND=sdpa SPARSE_ATTN_BACKEND=xformers OPENCV_IO_ENABLE_OPENEXR=1 \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+RUN chmod 755 /opt/room/image/*.sh && \
+    ln -s /opt/room/image/environment.sh /etc/profile.d/room-env.sh && \
+    ln -s /opt/room/image/check.sh /usr/local/bin/room-check && \
+    ln -s /opt/room/image/fetch-models.sh /usr/local/bin/room-fetch-models && \
+    ln -s /opt/room/image/room-cli.sh /usr/local/bin/room-litereality && \
+    ln -s /opt/room/image/sshd.sh /usr/local/bin/room-sshd && \
+    ln -s /opt/room/image/tmux.sh /usr/local/bin/room-tmux && \
+    python3.10 -m compileall -q /opt/room/image && \
+    /opt/room/envs/app/bin/python -m litereality_agent.cli --help && \
+    mkdir -p /opt/room/build-info && \
+    cp /opt/room/image/pins.json /opt/room/build-info/pins.json
+WORKDIR /yinxin/projects/room
+LABEL org.opencontainers.image.version="0.1.3"
+EXPOSE 22
+ENTRYPOINT ["/usr/bin/tini", "--", "/opt/room/image/entrypoint.sh"]
+CMD ["sleep", "infinity"]

@@ -1,0 +1,15 @@
+# Used only by room-sshd; does not overwrite the school's /etc/ssh/sshd_config.
+Port 22
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+PermitRootLogin prohibit-password
+UsePAM yes
+X11Forwarding no
+PrintMotd no
+AcceptEnv LANG LC_* COLORTERM TERM_PROGRAM TERM_PROGRAM_VERSION
+Subsystem sftp internal-sftp

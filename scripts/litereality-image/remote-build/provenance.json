@@ -1,0 +1,16 @@
+{
+  "source_recipe": "v0.1.3",
+  "source_sha256": "092765bc8309fc2517cf06744a70f6445346b588dabfe7d52320c67bdeb1b7a0",
+  "remote_recipe_sha256": "993e1994333bc8869e9b365a938f00289e7ce4fd6b2b108eb6c615080530e39f",
+  "changes": [
+    "r3: start room-sshd by default; runtime host keys and public-key-only authentication retained",
+    "Install bubblewrap required by the standalone Codex binary; verified missing by sandbox probe",
+    "Ubuntu APT mirror changed to HTTPS TUNA; signature verification unchanged",
+    "GPU dependency download concurrency limited to 2 after repeated retries",
+    "Remaining uncached wheels prefetched from PyPI for CPython 3.10 / x86_64, all original hashes enforced",
+    "OpenCV and SciPy prefetched from PyPI with hashes verified against the original lock",
+    "Three NVIDIA wheels prefetched from PyPI with hashes verified against PyTorch and the lock",
+    "BuildKit uv cache retained outside the image; hashes still required; installed files copied"
+  ],
+  "actual_base": "nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04@sha256:0a1cb6e7bd047a1067efe14efdf0276352d5ca643dfd77963dab1a4f05a003a4"
+}

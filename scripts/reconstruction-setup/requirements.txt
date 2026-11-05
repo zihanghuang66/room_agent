@@ -1,0 +1,3 @@
+# Direct dependencies pinned; transitive versions and wheel hashes recorded at install.
+numpy==1.26.4
+pycolmap-cuda12==4.2.1
