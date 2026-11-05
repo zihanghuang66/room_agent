@@ -1,7 +1,0 @@
-{
-  "version": "0.1.1",
-  "base_app_sha256": "29d3b7ccbf7b3f673b327b35883cb2fd70350bcf4480975b9a8005587b776aa5",
-  "modified": {
-    "src/litereality_agent/agent/providers/codex.py": "3150f4993f289a2631179a29ca291cee68ab4e24ea38455706dbd87f304f4411"
-  }
-}

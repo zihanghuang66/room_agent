@@ -1,1 +1,0 @@
-"""Realism authoring pipeline stages."""

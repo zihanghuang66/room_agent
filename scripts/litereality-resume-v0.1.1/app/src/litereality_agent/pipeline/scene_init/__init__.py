@@ -1,1 +1,0 @@
-"""Scene initialization pipeline stages."""

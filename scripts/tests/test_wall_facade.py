@@ -1,10 +1,10 @@
 import copy,json,math,os,sys,unittest
 from pathlib import Path
-APP=Path(os.environ['ROOM_TEST_APP']);sys.path.insert(0,str(APP/'src'))
+APP=Path(os.environ.get('ROOM_TEST_APP',str(Path(__file__).resolve().parents[1]/'litereality-full-v0.3.1/app')));sys.path.insert(0,str(APP/'src'))
 from litereality_agent.pipeline.scene_init.layout import adapter
 from litereality_agent.pipeline.scene_init.layout.adjust import check
 ROOT=Path(__file__).resolve().parents[2]
-CAPTURE=next((ROOT/'return_output/environment_reports/room_004_20261105T012846Z').rglob('layout_validation.json')).parent
+CAPTURE=Path(os.environ['ROOM_TEST_CAPTURE']) if os.environ.get('ROOM_TEST_CAPTURE') else None
 
 def shell(thickness=.0001):
  return {'walls':{'boundary':{'start':[0,0],'end':[4,0],'thickness':thickness,'height':3}},
@@ -15,9 +15,11 @@ def shell(thickness=.0001):
 def errors(s):return [v for v in check(s) if v.severity=='error']
 
 class WallFacade(unittest.TestCase):
+ @unittest.skipUnless(CAPTURE is not None, 'Optional real scan fixture: set ROOM_TEST_CAPTURE; raw data is not in Git')
  def test_raw_thickness_not_replaced_by_16cm(self):
   s=adapter.shell_from_scene_data(CAPTURE)
   self.assertAlmostEqual(s['walls']['Wall1']['thickness'],.0001,places=6)
+ @unittest.skipUnless(CAPTURE is not None, 'Optional real scan fixture: set ROOM_TEST_CAPTURE; raw data is not in Git')
  def test_current_scene_layout_passes_without_moving_wardrobe(self):
   s=adapter.shell_from_scene_data(CAPTURE)
   self.assertEqual(errors(s),[])

@@ -1,6 +1,6 @@
 import importlib.util,json,os,tempfile,unittest,io,subprocess,sys,tarfile
 from pathlib import Path
-P=Path(os.environ['ROOM_TEST_PACKAGE'])
+P=Path(os.environ.get('ROOM_TEST_PACKAGE',str(Path(__file__).resolve().parents[1]/'litereality-full-v0.3.1')))
 spec=importlib.util.spec_from_file_location('wall_resume',P/'resume_guard.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 OLD='6d28c5e24cc49cd462b16746aba237993bb83f4a05619a9ee226bed0b86abae8'
 class Resume(unittest.TestCase):
@@ -42,15 +42,18 @@ class Resume(unittest.TestCase):
     root=Path(t);folder,new,data,state=self.fixture(root);new[key]='wrong'
     with self.assertRaises(ValueError):m.validate_resume(folder,root,new)
  def test_launcher_migrates_existing_run_without_reextracting(self):
-  oldpkg=Path(__file__).resolve().parents[1]/'litereality-full-v0.3.0'
   with tempfile.TemporaryDirectory() as t:
    project=Path(t)/'project';project.mkdir();archive=project/'scan.tar'
    with tarfile.open(archive,'w') as tar:
     for n in ('room.usdz','frame_00000.json','frame_00000.jpg','depth_00000.png'):
      data=b'fixture';info=tarfile.TarInfo(n);info.size=len(data);tar.addfile(info,io.BytesIO(data))
-   first=subprocess.run([sys.executable,str(oldpkg/'run.py'),'--project-root',str(project),'--scene','neutral_scan','--scan-archive',str(archive),'--prepare-only'],capture_output=True,text=True)
+   first=subprocess.run([sys.executable,str(P/'run.py'),'--project-root',str(project),'--scene','neutral_scan','--scan-archive',str(archive),'--prepare-only'],capture_output=True,text=True)
    self.assertEqual(first.returncode,0,first.stdout+first.stderr)
    folder=next((project/'return_output/artifacts').iterdir())
+   # Synthetic legacy metadata tests migration without retaining an old runner.
+   legacy=json.loads((folder/'input.json').read_text())
+   legacy.update(version='0.3.0',app_sha256=OLD)
+   (folder/'input.json').write_text(json.dumps(legacy))
    result=json.loads((folder/'result.json').read_text());result.update(status='failed',stage='ingest');(folder/'result.json').write_text(json.dumps(result))
    state=folder/'scenes/neutral_scan/.litereality/pipeline.json';state.parent.mkdir(parents=True);state.write_text(json.dumps({'stages':{'ingest':{'status':'failed'}}}))
    d=folder/'scenes/neutral_scan/scene_init/obj_stage/object_init/input/scene_data/neutral_scan';d.mkdir(parents=True)

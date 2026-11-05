@@ -1,7 +1,25 @@
 # Source-only repository. Local datasets and generated results remain on disk.
 /*
 !/.gitignore
+!/.gitattributes
+!/README.md
 !/scripts/
+
+# Only the current room_004 workflows are versioned; legacy local files stay.
+/scripts/*
+!/scripts/run_room_004.sh
+!/scripts/build_room_004.py
+!/scripts/build_litereality_batch_review.py
+!/scripts/requirements-test.txt
+!/scripts/litereality-full-v0.3.1/
+!/scripts/litereality-batch-review-v0.1.0/
+!/scripts/tests/
+/scripts/tests/*
+!/scripts/tests/test_batch_review.py
+!/scripts/tests/test_batch_integration.py
+!/scripts/tests/test_wall_facade.py
+!/scripts/tests/test_wall_resume.py
+!/scripts/tests/test_source_checkout.py
 
 .DS_Store
 __pycache__/

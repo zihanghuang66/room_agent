@@ -16,6 +16,19 @@ FILES=('batch_core.py','batch_io.py','agent_session.py','worker.py','run_batches
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 
 def main():
+    # A source-only clone has no delivery archives. Rebuild its own application
+    # payload, preserving the audited revision used by existing-run validation.
+    with (SRC/'app.tar.gz').open('wb') as raw,gzip.GzipFile(fileobj=raw,filename='',mode='wb',mtime=0) as gz:
+        with tarfile.open(fileobj=gz,mode='w') as tar:
+            for p in sorted((SRC/'app').rglob('*')):
+                if not p.is_file() or p.is_symlink() or '__pycache__' in p.parts:
+                    continue
+                info=tarfile.TarInfo(p.relative_to(SRC/'app').as_posix())
+                info.size=p.stat().st_size;info.mode=0o644;info.mtime=0
+                with p.open('rb') as stream:tar.addfile(info,stream)
+    expected=(SRC/'app.sha256').read_text().strip()
+    if sha(SRC/'app.tar.gz') != expected:
+        raise RuntimeError('Batch application source differs from its audited revision; do not reuse existing runs without a compatibility review')
     (SRC/'tests').mkdir(exist_ok=True)
     for n in ('test_batch_review.py','test_batch_integration.py'):
         shutil.copy2(ROOT/'tests'/n,SRC/'tests'/n)
