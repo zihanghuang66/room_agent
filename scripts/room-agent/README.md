@@ -1,6 +1,8 @@
-# Room Agent 新架构：第一阶段
+# Room Agent 新架构
 
-当前仅提供 **保存源码的快照、语法审计和持久化恢复**。运行结果中的 `completed` 表示这个审计任务结束，不能解释为房间重建或质量通过。原有 `scripts/run_room_004.sh` 继续承担完整重建任务。
+第二阶段新增 **已有场景构建、几何检查、对照渲染、Codex 独立评审、有界修复和网页监控**。服务器交付说明见 [delivery/使用说明.md](delivery/使用说明.md)，验收范围见 [docs/phase2-status.md](docs/phase2-status.md)。`completed` 表示任务结束，必须同时查看 `quality_status` 和 `repair_termination`；执行成功不等于视觉质量通过。
+
+原有 `scripts/run_room_004.sh` 继续承担原始扫描完整重建任务。下面保留第一阶段源码审计的 API 用法，用于基础恢复测试。
 
 计划见 [implementation-plan.md](docs/implementation-plan.md)，实际完成范围和自检证据见 [status.md](docs/status.md)。
 
@@ -8,10 +10,10 @@
 
 ```mermaid
 flowchart LR
-    CLI[CLI 已实现 / TUI和网页待接入] --> Service[统一应用服务]
+    CLI[CLI和最小网页已实现 / TUI和对话待接入] --> Service[统一应用服务]
     Service --> Graph[LangGraph 状态与恢复]
     Graph --> Audit[已实现：快照与源码审计]
-    Graph -.下一阶段.-> Workers[构建 / 渲染 / Codex评审与修复]
+    Graph --> Workers[构建 / 渲染 / Codex评审与修复]
     Graph --> DB[每次任务独立检查点]
     Audit --> Files[版本化文件与校验清单]
     Service --> Events[事件与派生报告]
@@ -72,13 +74,13 @@ scripts/room-agent/.venv/bin/python -m pytest -q scripts/room-agent/tests
 
 LangGraph 在节点级重放，不会自动恢复 Blender/TRELLIS 正运行的内部状态。参见官方 [持久化文档](https://docs.langchain.com/oss/python/langgraph/persistence) 和 [中断文档](https://docs.langchain.com/oss/python/langgraph/interrupts)。
 
-## 目前限制
+## 源码审计入口与整体限制
 
-- 没有接入真实构建、渲染、视觉评审、修复和 ingest/reconstruct，也没有网页或后台调度器。
+- `create` 创建的源码审计不执行构建/渲染；`create-review` 和 `serve` 是第二阶段已有场景复评入口。原始扫描全流程、对话和后台调度器仍未迁移。
 - SQLite 和文件锁仅在本机实测；学校持久化目录如果是 NFS 等共享盘，必须先验证锁与数据库语义，再决定使用本地工作盘加持久数据库或 PostgreSQL。不要把“目录持久化”当成数据库并发安全的证明。
 - 一个房间当前只允许一个写操作；不同房间状态隔离，但尚无 GPU 任务队列。
 - 快照不可变是程序契约，不是操作系统访问控制；管理员仍可改动文件，下一次执行会检出。复制目前不去重，磁盘用量随任务增加。
 - 查询只读检查点但首次查询会创建 SQLite 元数据；事件文件用于诊断，不是面向海量事件的索引服务。
 - 输入版本不匹配明确拒绝恢复；尚未实现跨版本迁移器。第一阶段未完成的开发任务可重新创建，不能将这一行为套用于昂贵的 GPU 任务。
 
-代码在 `scripts/room-agent`；运行输出放 `return_output`，不进入 Git。服务器启动验证属于下一阶段关卡。
+代码在 `scripts/room-agent`；运行输出放 `return_output`，不进入 Git。服务器真实流程验证属于本阶段待完成的验收关卡。
