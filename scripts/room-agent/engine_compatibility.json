@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "release": "0.10.2",
+  "reason": "Scene-derived read-only evidence/review Skill. Existing completed receipts remain immutable and are reused; fresh stages use current inventory. No source mutation, queue or graph changes. Full scan backend unchanged.",
+  "engines": {
+    "full_scan": {
+      "current": "c175a2050abae8819ddecb828350464c9ea8d14ee7ef37c336e2ab9965e98fb4",
+      "previous": [
+        "e9908cea2dbca8e90023802a676b62dd2f3270ba40e8b8c232ab70acc7576f56",
+        "3a0de08f149d31dd2f740e81024572b6560f77e480918795540f1741b5b65cbc",
+        "075dd04fa03ef4dcf15733fdb211614e533758257b1b0113e932605c28c13a99",
+        "d0fe7df19101bf488a562402c431271de88c7b94964442de2356a5adb5d95559",
+        "4626c0d9a8c4b883ec91283e55eba3971b7ee16c5c08f1367be65bd725cc5b56",
+        "4a99e7c96e56c7cc73f8c5949ec35ede5c096c30def29295864cdf3632d13fe6",
+        "deda310c9e8e9973135fd242812ca8d20bbebab814c2b332b0ca258b2fea88a8",
+        "46cb2c2bfb268d4c965f2c6c603fb5296d00303de157f43c75c5b1a3ebb6082a",
+        "57509cc8e7f179df19cdc3d064f492058aec470a6a5500f84efbca798cc843d6",
+        "808fe8618c9379dd6b16adf9ce6346640c76339db4dd94db9a8e3f19d4519cfa",
+        "c7a0856e24f27749a4b54e17aecf51bca55b2d01c96eb1d24ba2ccc19005cf47",
+        "ee2e8327b1fdf2c2b203be76abf0539b16909460a645f147e8314a6a1a610204",
+        "6d99666511bdebed7d249d9f1e76653ef86b36b55a7595f7802bc6bd0a279d97"
+      ]
+    },
+    "saved_scene": {
+      "current": "40f2728e587a442d8f0b992ae770cc014d142aa65420ef692115d0b7c847b22d",
+      "previous": [
+        "e8feb3e93d780fb2fa218953029b14afbc4661a90af94d670b911dbfe4abcd8c",
+        "614d27678e6736b5f2ae8a0d2de7465a6890283a6be0b9f69eabbf4ae5f1e7c0",
+        "cc0fa531d97389391a4c7135b1744b13292452546fb6b206bc95fda46d8e6bfe",
+        "0e33afc29ea3afb734c9bd4acc255622f812d176af3ef8dbcb50c6aa250a5852",
+        "81f0849a1149af708adfd954de2554241173f083b358c355390335c72cb93e83",
+        "1e28388c651610ce10d0ad7cffdf7f003b9f440b28ecc0320ef6be9ea47cc08c",
+        "2917ec37b1cea33e1744d3a7641343bfdcd754b4ef31b67144c313c843239983",
+        "aa646bba3902cc4d02e2aad00212787e05b58fdbb2b1a16a7fedb6e817abc930",
+        "8916431323524dad03389596ada262a3d62a83105138a8947fb9682739af1831",
+        "11b34877c80c9029ce5b4f88b5fe7dd1ef823b52c4e146cdecbe90f1d23ff219",
+        "158985c6ca9ba7ceab819f5474e5a9875a8b2909b0128b13ef974df2a5b40183",
+        "47dfb4a97b91b6474793dd46a629024edfc4de496a7e5593e2ad5e05d158170b",
+        "44aa523cd9d27ae6da07764a82c7f9066e384d8a3d5b3ea0ab61ad0290043071"
+      ]
+    }
+  }
+}

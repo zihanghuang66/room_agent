@@ -1,6 +1,6 @@
 # 第二阶段交付状态
 
-日期：2026-11-06。版本：0.2.0。状态：**代码交付，本地验证完成，等待学校服务器验收**。没有推送 GitHub。
+日期：2026-11-06。版本：0.2.3。状态：**代码交付，本地验证完成，等待学校服务器验收**。没有推送 GitHub。
 
 ## 交付范围
 
@@ -38,3 +38,32 @@
 SQLite/文件锁探测只验证同容器跨进程；多机器共享盘并发、断电、远程后台作业调度不在本阶段保证内。当前仍是前台服务，浏览器关闭不影响进程，但关闭服务器启动脚本会停止作业。以后端代码指纹不匹配为由拒绝旧任务恢复是有意行为，不自动迁移不同代码版本。
 
 完整本地证据：项目 `return_output/agent_stage2_local_validation/`，不提交 Git。打包入口 `delivery/build_delivery.py`；用户运行步骤 `delivery/使用说明.md`。
+
+## v0.2.1 启动兼容修复（2026-11-06）
+
+- 原因：交付脚本要求 Python 3.11，而学校镜像构建文件明确使用 3.10。修复前在真正的 Python 3.10.19 上复现相同 AssertionError。
+- 调整：最低版本 3.10；自动优先探测现有 app 解释器；打印实际路径、版本和失败原因。显式指定无效解释器时不静默回退。独立编排环境改为 v0.2.1，持久任务状态路径保持不变。
+- 依赖锁重新以 --python-version 3.10 --universal 解析：补齐 exceptiongroup、tomli，并为要求较新 Python 的间接依赖保留条件版本，不能只删除版本断言。
+- 验证：Mac 上真正的 Python 3.10.19、全新目录、从交付 tar 解压，运行 start_server.sh --check-only，锁定安装/包校验/存储检查/全部 56 项测试通过，退出码 0。日志在 return_output/agent_stage2_python310_validation/after_fix.log。
+- 这证明 Python 3.10 启动兼容性；学校 Linux 上的真实场景和 Codex 服务仍待用户验收。没有升级原 app/GPU 环境，没有推送 GitHub。
+
+## v0.2.2 旧预览目录兼容修复（2026-11-06）
+
+- 用户报错路径为 realism_authoring/room/repair_preview/Object。新 source_info 使用严格全树校验，遗漏旧 batch_io.source_files 对顶层 room_preview/repair_preview 的排除规则。在带相同路径和目录链接的夹具上复现原始 ValueError，修复前测试失败。
+- 新 source_tree_hashes 仅用于导入源文件清单和快照前再次核对；遍历前剪除这两个顶层可重建预览。不会解引用任意链接，不删除旧目录，不排除真实 Object 资产，也不改变新构建产物的严格校验。
+- 新增 5 个用例：原样链接复现至真实快照复制（含 source/seed 与缓存变化）、3 类源文件/资产链接拒绝、预览名目录中的产物篡改和链接仍拒绝。完整 Python 3.10 测试 61 passed。
+- 本次失败在 source_info、任务发布之前；用户更新服务后选择同一原始运行创建复评。不是重跑 ingest/reconstruct，也没有迁移其他旧代码任务。服务器真实执行待验收。
+- 验证日志：return_output/agent_stage2_preview_link_validation/。未推送 GitHub。
+
+## v0.2.3 编排审计修复（2026-11-06）
+
+学校 d5cf6e6314274bfab4099e7556fe6058 运行已验证已有场景构建/检查/渲染/评审至暂停结束，首次约 772.7 秒，质量 5 分。修复闭环、故障恢复尚未在该服务器返回包中得到验证。
+
+- 决策事件：decision_waiting / action_received / decision_finished，附轮次、动作入口、自动/手动结束原因；中断恢复不重复输出同轮等待事件。入口是 web/cli/api 渠道，不是用户身份认证。
+- 错误日志：保留脱敏 error/turn.failed/item error 详情并即时打印，结果记录错误次数及成功恢复状态。旧包的 4 次 request timed out 重连详情实际在 SessionResult.raw.stream_errors 中，修正此前“完全丢失”的判断。
+- UI：已结束不再停留在 review；未执行分支显示跳过，not_started 显示尚未启动修复。已执行修复跨到下一轮后仍显示完成。评审摘要显示成功会话中的错误事件数量。
+- 本地 Python 3.10 完整测试 67 passed；旧 batch 回归 27 passed。含实际 HTTP→CLI 的动作来源记录，SQLite 服务重开后的修复分支、失败节点续跑、修复超时后复评；外部模型和 Blender 在控制流测试中使用边界替身，不能替代学校真实修复验收。
+- 不迁移旧任务、不重新打开已结束任务、不绕过代码指纹。旧任务可以查看/导出；旧未完成任务继续使用旧包。新包闭环验收须创建新的已有场景复评，等待后选择修复一批；无需重新 ingest/reconstruct。
+- 依赖锁未变，沿用 v0.2.2 编排 venv。原应用环境、GPU 环境、原始场景不改动。未推送 GitHub。
+
+验证日志：return_output/agent_stage2_v023_validation/。

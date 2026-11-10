@@ -1,86 +1,46 @@
-# Room Agent 新架构
+# Spatial Agent v0.10.2
 
-第二阶段新增 **已有场景构建、几何检查、对照渲染、Codex 独立评审、有界修复和网页监控**。服务器交付说明见 [delivery/使用说明.md](delivery/使用说明.md)，验收范围见 [docs/phase2-status.md](docs/phase2-status.md)。`completed` 表示任务结束，必须同时查看 `quality_status` 和 `repair_termination`；执行成功不等于视觉质量通过。
+当前交付包含对话规划、确认后执行、场景证据查看、同一 Workspace 内的局部编辑和独立质量复评，以及持久队列、检查点和诊断下载。
 
-原有 `scripts/run_room_004.sh` 继续承担原始扫描完整重建任务。下面保留第一阶段源码审计的 API 用法，用于基础恢复测试。
+## 启动
 
-计划见 [implementation-plan.md](docs/implementation-plan.md)，实际完成范围和自检证据见 [status.md](docs/status.md)。
+使用完整交付包的 `start_server.sh`；不要直接把源码目录当成服务器运行包。完整命令见 [使用说明](delivery/使用说明.md)。打包需先在仓库根目录执行：
 
-## 分层与状态
-
-```mermaid
-flowchart LR
-    CLI[CLI和最小网页已实现 / TUI和对话待接入] --> Service[统一应用服务]
-    Service --> Graph[LangGraph 状态与恢复]
-    Graph --> Audit[已实现：快照与源码审计]
-    Graph --> Workers[构建 / 渲染 / Codex评审与修复]
-    Graph --> DB[每次任务独立检查点]
-    Audit --> Files[版本化文件与校验清单]
-    Service --> Events[事件与派生报告]
+```bash
+python3 scripts/build_room_004.py
+python3 scripts/room-agent/delivery/build_delivery.py
 ```
 
-| 数据 | 权责 |
+要求 Python 3.10+。LangGraph 编排环境与 Blender/TRELLIS 应用环境分离。默认持久状态目录为 `/yinxin/projects/room/return_output/agent_state_stage2_v020`。
+
+## 分层
+
+| 层 | 作用 |
 | --- | --- |
-| `input.json` + `input.sha256.json` | 不可变请求；保存源文件清单、hash、房间和流程版本 |
-| `checkpoints.sqlite` | 图的执行位置与节点输出；每个 run 单独保存 |
-| `events/*.json` | 递增事件，记录节点、错误、暂停前后的调用；原子写入 |
-| `rooms/<room>/revisions/<run>/` | 源码和依赖文件副本；续跑前校验，绝不直接编辑 |
-| `result.json` | 便于导出的状态摘要；恢复时不信任它 |
+| `ui/` | 对话意图、计划确认、证据绑定、会话内操作和展示 |
+| `src/room_agent/*_graph.py` | 扫描、保存场景评审及编辑的 LangGraph 节点和恢复 |
+| `*_executor.py` / `*_driver.py` | 有界子进程、旧后端适配、构建、渲染和模型调用 |
+| `skills/` | 选图/评审及编辑规则，实际注入相应模型会话 |
+| SQLite、事件和 receipts | 持久检查点、执行审计、已完成产物校验与复用 |
 
-`show` 从检查点和最近执行事件重建状态，并通过运行锁判断进程是否还在运行。它展示上次执行结果，不持续扫描大文件；`run` / `resume` 会实际核验产物。事件中出现多次 `node_started` 可能是节点重放，不能据此认定重复生成了模型。
+会话 ID、执行 run ID 与当前保留版本分开管理。独立复评产生报告但不替换当前场景；编辑候选仅按明确接受规则提升。原始扫描 ingest/reconstruct 不因复评或局部编辑重复执行。
 
-## 安装和运行
+## 当前版本与验证
 
-要求 Python 3.11+、Linux 或 macOS、本地 POSIX 文件系统。使用独立环境；不要直接改动已有 Blender/TRELLIS 环境。
+见 [v0.10.2 发布记录](docs/release-v0102.md) 和 [修复细节](docs/patch-v0102.md)。学校独立复评已验证，质量不通过与执行失败分别报告。旧完成报告不被新代码偷偷改写。
 
-在仓库根目录：
-
-```bash
-python3.11 -m venv scripts/room-agent/.venv
-scripts/room-agent/.venv/bin/python -m pip install --require-hashes -r scripts/room-agent/requirements.lock
-scripts/room-agent/.venv/bin/python -m pip install --no-deps -e scripts/room-agent
-```
-
-创建审计任务（将 SOURCE 改为含 `Room.py` 的已有保存源码目录）：
+安装锁定测试依赖后可执行：
 
 ```bash
-scripts/room-agent/.venv/bin/room-agent \
-  --state-root /yinxin/projects/room/return_output/agent_state \
-  create --room room_004 --source /完整路径/round_03/room
+python -m pytest -q scripts/room-agent/tests
 ```
 
-命令返回 `run_id`。将下面的 RUN_ID 换成该值：
+测试覆盖真实 LangGraph/SQLite/HTTP/队列，模型和渲染使用测试适配器。检查点可以复用已完成节点，但不能恢复正在运行的 Blender/TRELLIS 内部状态。执行前验证源文件、产物和版本兼容性。
 
-```bash
-scripts/room-agent/.venv/bin/room-agent --state-root /yinxin/projects/room/return_output/agent_state run RUN_ID
-scripts/room-agent/.venv/bin/room-agent --state-root /yinxin/projects/room/return_output/agent_state show RUN_ID
-scripts/room-agent/.venv/bin/room-agent --state-root /yinxin/projects/room/return_output/agent_state events RUN_ID --after 0
-scripts/room-agent/.venv/bin/room-agent --state-root /yinxin/projects/room/return_output/agent_state resume RUN_ID --action finish
-```
+## 范围与限制
 
-`run` 执行到人工确认节点便结束当前进程，状态是 `waiting_for_input`。`resume --action finish` 确认完成源码审计；`--action cancel` 结束任务并保留证据。技术故障或进程中断后使用 `resume RUN_ID`，不带 action，从未完成节点恢复。输入本身有错则更正输入并创建新任务，不篡改已保存版本。
-
-查询全部任务用 `list`。输出为 JSON；失败输出 JSON 错误到终端 stderr 并返回退出码 1，节点错误同时持久化。参数/版本校验在启动前失败时不会伪造一次图执行记录。
-
-源目录限制 1 GiB、10000 个文件，拒绝软链接和特殊文件；当前只支持源码目录，不能直接输入扫描 tar 或 `.blend`。这些是基础审计的容量边界，不是未来重建流程的限制。
-
-## 自检
-
-```bash
-scripts/room-agent/.venv/bin/python -m pytest -q scripts/room-agent/tests
-```
-
-测试使用真实 LangGraph、SQLite、独立子进程和文件锁。模拟在原子发布之后、节点检查点之前强退，验证恢复复用；故障恢复不只靠正常的 finish/resume 测试。
-
-LangGraph 在节点级重放，不会自动恢复 Blender/TRELLIS 正运行的内部状态。参见官方 [持久化文档](https://docs.langchain.com/oss/python/langgraph/persistence) 和 [中断文档](https://docs.langchain.com/oss/python/langgraph/interrupts)。
-
-## 源码审计入口与整体限制
-
-- `create` 创建的源码审计不执行构建/渲染；`create-review` 和 `serve` 是第二阶段已有场景复评入口。原始扫描全流程、对话和后台调度器仍未迁移。
-- SQLite 和文件锁仅在本机实测；学校持久化目录如果是 NFS 等共享盘，必须先验证锁与数据库语义，再决定使用本地工作盘加持久数据库或 PostgreSQL。不要把“目录持久化”当成数据库并发安全的证明。
-- 一个房间当前只允许一个写操作；不同房间状态隔离，但尚无 GPU 任务队列。
-- 快照不可变是程序契约，不是操作系统访问控制；管理员仍可改动文件，下一次执行会检出。复制目前不去重，磁盘用量随任务增加。
-- 查询只读检查点但首次查询会创建 SQLite 元数据；事件文件用于诊断，不是面向海量事件的索引服务。
-- 输入版本不匹配明确拒绝恢复；尚未实现跨版本迁移器。第一阶段未完成的开发任务可重新创建，不能将这一行为套用于昂贵的 GPU 任务。
-
-代码在 `scripts/room-agent`；运行输出放 `return_output`，不进入 Git。服务器真实流程验证属于本阶段待完成的验收关卡。
+- 当前为持久串行队列，不包含多 GPU 调度；学校共享文件系统仍须符合数据库和文件锁要求。
+- 全扫描内部部分步骤仍使用审定的 legacy backend；不是所有内部动作都拆成独立图节点。
+- 尚未交付自动连续修复、对话新相机补图、对话创建新扫描、长期对话摘要或历史版本回退。
+- 复评标准保持 score >= 8、无问题和实际对象全覆盖。更多视角不保证遮挡对象可验证，也不保证质量通过。
+- 历史阶段文档是当时记录，当前状态以本发布说明为准。

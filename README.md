@@ -1,8 +1,45 @@
-# Room Agent — room_004 当前运行代码
+# Spatial Agent — v0.10.2
 
-新的分层架构位于 [scripts/room-agent](scripts/room-agent/README.md)。第二阶段已交付已有场景复评、可选分批修复和网页监控，等待学校服务器全链路验收；原始扫描完整重建仍使用下方原有入口。
+通过网页对话规划房间重建、查看证据、确认局部编辑或独立质量评审；LangGraph 保存阶段状态和检查点，Codex CLI 执行模型任务。已有任务和保留场景可以持续使用。
 
-本仓库只保留 room_004 所需的最新完整流程、已有结果的分批评审/修复、打包入口和相关测试。历史排查包、旧版本、场景专用建模示例均不在当前目录树中。
+## 使用当前发布版本
+
+优先从 [GitHub Releases](https://github.com/zihanghuang66/room_agent/releases/tag/v0.10.2) 下载 `room-agent-stage4b-v0.10.2.tar.gz`，上传到学校服务器的 `/yinxin/projects/room/scripts`。等当前操作结束并停止旧网页服务后：
+
+```bash
+cd /yinxin/projects/room/scripts
+tar -xzf room-agent-stage4b-v0.10.2.tar.gz
+cd room-agent-stage4b-v0.10.2
+bash start_server.sh
+```
+
+沿用已有 SSH 端口转发，访问本机 `http://127.0.0.1:8765`。启动脚本前台运行，默认复用 `/yinxin/projects/room/return_output/agent_state_stage2_v020`，不会自动重跑重建。
+
+前提是已准备好的学校容器：应用 Python、Blender、GPU/TRELLIS 环境和可用的 Codex 登录。仓库和发布包只含代码、测试、必要文档，不含扫描、模型权重、场景资产、诊断日志、登录凭据或 Docker 镜像。
+
+## 当前验收状态
+
+- 本地运行包 477 项测试通过；昂贵模型和渲染使用测试适配器。
+- 学校真实独立复评已完成：通用 Skill 同时用于选图和评审，119 个实际对象进入清单，不再混入其他房间的卧室要求。
+- 本次场景几何通过，视觉质量 5/10、未通过；不能把流程完成写成场景质量通过。
+- 本次复评未中断，服务器上的对话 Resume 分支仍待自然中断场景验收。
+
+见 [发布说明](scripts/room-agent/docs/release-v0102.md)、[验收步骤](scripts/room-agent/delivery/验收步骤.md) 和 [架构与入口](scripts/room-agent/README.md)。
+
+## 从源码打包
+
+在本仓库根目录执行：
+
+```bash
+python3 scripts/build_room_004.py
+python3 scripts/room-agent/delivery/build_delivery.py
+```
+
+当前网页运行包输出到 `return_output/room-agent-stage4b-v0.10.2.tar.gz`。前一条命令从审定源码重建底层应用归档；完整流程和批次评审后端是运行依赖，不是需要用户另行运行的历史测试版本。
+
+## 原有脚本入口
+
+以下保留直接运行 room_004 的入口；通过网页继续已有任务时，无需执行它们。
 
 ## 在学校现有容器里运行
 

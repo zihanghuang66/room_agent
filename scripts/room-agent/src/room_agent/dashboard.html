@@ -1,36 +1,593 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Room Agent · 场景工作台</title>
-<style>
-:root{color-scheme:dark;--bg:#101419;--panel:#192027;--line:#2c3640;--muted:#9aaaba;--text:#e9f0f5;--accent:#8de0c3;--bad:#ff9a8e;--warn:#f3cf86}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,-apple-system,sans-serif}header{padding:25px 4%;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:20px;align-items:center}h1{font-size:25px;margin:0;font-weight:650}h2{font-size:17px;margin:0 0 14px}p{margin:5px 0}.muted{color:var(--muted);font-size:13px}.tag{color:var(--accent);font-size:12px;border:1px solid #386552;border-radius:20px;padding:4px 12px;white-space:nowrap}main{max-width:1600px;margin:auto;padding:28px 4%;display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px}.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px}label{display:block;color:var(--muted);font-size:13px;margin:13px 0 6px}select,input{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:10px;width:100%;font:inherit}button,a.button{background:var(--accent);border:0;border-radius:6px;color:#09271d;padding:10px 14px;font:600 13px system-ui;cursor:pointer;display:inline-block;text-decoration:none}button.secondary,a.secondary{background:transparent;color:var(--text);border:1px solid var(--line)}button:disabled{opacity:.35;cursor:not-allowed}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.run{display:block;width:100%;background:transparent;border:1px solid var(--line);color:var(--text);text-align:left;margin:8px 0;padding:10px;border-radius:8px}.run.selected{border-color:var(--accent)}.run small{display:block;color:var(--muted);font-weight:400}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}.metric{padding:12px;background:var(--bg);border-radius:8px}.metric strong{display:block;font-size:17px}.stages{display:flex;flex-wrap:wrap;gap:10px}.stage{flex:1;min-width:115px;padding:12px;border:1px solid var(--line);border-radius:8px;font-size:13px}.stage b{display:block;margin-bottom:6px}.stage.running{border-color:var(--accent);box-shadow:0 0 0 1px #8de0c330}.stage.completed{color:var(--accent)}.stage.failed{color:var(--bad);border-color:#874c48}.stage.skipped{opacity:.6}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.65 ui-monospace,SFMono-Regular,monospace;max-height:350px;overflow:auto;background:var(--bg);padding:14px;border-radius:8px;margin:0}.previews{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.previews figure{margin:0;background:var(--bg);border-radius:8px;overflow:hidden}.previews img{display:block;width:100%;height:190px;object-fit:contain}.previews figcaption{padding:10px;font-size:12px;color:var(--muted)}a{color:var(--accent)}#notice{padding:12px 16px;border:1px solid var(--line);border-radius:8px;margin-bottom:18px;display:none;white-space:pre-wrap;overflow-wrap:anywhere}#notice.error{border-color:#874c48;color:var(--bad)}.errorbox{color:var(--bad);white-space:pre-wrap;overflow-wrap:anywhere}.empty{color:var(--muted);padding:20px 0}details{margin-top:16px}summary{cursor:pointer;color:var(--muted)}.path{word-break:break-all;font-size:12px;color:var(--muted)}@media(max-width:850px){main{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}header{align-items:flex-start}.tag{white-space:normal}}
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Spatial Agent — Workspace</title><style>
+:root{color-scheme:light;--ink:#20282b;--sub:#70797e;--line:#e7eaec;--green:#276250;--soft:#f1f7f4}*{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}button,summary{cursor:pointer}button{border:1px solid var(--line);background:white;border-radius:9px;padding:10px 15px;color:var(--ink);font-weight:550}button:hover{background:#f6f8f7}button.primary{background:var(--green);border-color:var(--green);color:white}button.primary:hover{background:#1d5141}button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #77aa99;outline-offset:3px}header{height:76px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 36px}.brand{display:flex;align-items:center;gap:12px;font-size:19px;font-weight:650;letter-spacing:-.5px}.logo{width:32px;height:32px;display:grid;place-items:center;background:var(--green);border-radius:9px;color:white;font-size:21px;font-weight:400}.header-note{color:var(--sub);font-size:12px}.badge{font-size:11px;border:1px solid var(--line);padding:4px 9px;border-radius:6px;font-weight:500;letter-spacing:.2px;color:var(--sub)}.shell{display:grid;grid-template-columns:242px minmax(0,1fr);max-width:1480px;margin:0 auto;min-height:calc(100vh - 76px)}aside{border-right:1px solid var(--line);padding:30px 20px}.overline{text-transform:uppercase;font-size:10px;font-weight:650;letter-spacing:1.6px;color:#84908f;margin:0 0 14px}.room{width:100%;text-align:left;padding:14px;background:var(--soft);border:1px solid #d9e7df;border-radius:10px}.room strong{font-size:14px;display:block}.room small{display:block;color:var(--sub);font-weight:400;margin-top:4px}.room .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#b28027;margin-right:6px}.new{margin-top:12px;width:100%;color:var(--sub);font-size:13px}.sidebar-section{margin-top:32px}.sidecard{border:1px solid var(--line);padding:15px;border-radius:10px}.sidecard p{font-size:12px;color:var(--sub);margin:7px 0 0}.side-footer{margin-top:36px;font-size:11px;color:var(--sub)}main{padding:30px 34px 24px;min-width:0}.title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:14px}h1{font-size:27px;letter-spacing:-.7px;font-weight:600;margin:0 0 4px}h2{font-size:15px;font-weight:600;margin:0}h3{font-size:13px;font-weight:600;margin:0}p{margin:0}.sub{color:var(--sub);font-size:12px}.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:5px 9px;border-radius:20px;background:#fbf5e8;color:#89651e}.pill:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}.card{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}.card-head{padding:17px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);gap:12px}.progress-card{padding:18px 20px;margin-bottom:20px}.progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:19px}.flow{display:flex;align-items:center;gap:9px}.step{display:flex;gap:7px;align-items:center;font-size:12px;white-space:nowrap;color:var(--sub)}.step i{font-style:normal;width:21px;height:21px;border-radius:50%;background:#edf5f0;color:var(--green);display:grid;place-items:center;font-size:11px}.step.current{color:var(--ink);font-weight:600}.step.current i{background:var(--green);color:white}.connector{height:1px;background:var(--line);flex:1;min-width:8px}.content{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:20px}.scene-image{margin:0;padding:12px;background:#fafbfa}.scene-image img{display:block;width:100%;height:330px;object-fit:cover;border-radius:6px}.scene-image figcaption{display:flex;justify-content:space-between;gap:14px;font-size:10px;color:var(--sub);padding:10px 2px 0}.preview-footer{padding:15px 20px;font-size:12px;display:flex;justify-content:space-between;align-items:center}.textbutton{padding:0;border:0;border-radius:0;font-size:12px;color:var(--green);background:none;font-weight:550}.review{padding:20px}.review h2{margin-bottom:5px}.review>.sub{margin-bottom:20px}.issue{padding:14px 0;border-top:1px solid var(--line)}.issue p{font-size:12px;line-height:1.6;color:var(--sub);margin-top:5px}.priority{font-size:10px;font-weight:500;color:#8b722f;float:right}.action-area{margin-top:7px;padding-top:17px;border-top:1px solid var(--line)}.action-area button{width:100%;font-size:12px;margin-top:8px}.action-area .hint{font-size:11px;line-height:1.6;color:var(--sub);margin-top:10px}.bottom{margin-top:20px}.disclosure{padding:16px 20px;margin-top:12px}.disclosure summary{font-size:12px;font-weight:550;color:#4b565b;list-style:none;display:flex;justify-content:space-between;align-items:center}.disclosure summary:after{content:"+";font-size:17px;font-weight:400;color:var(--sub)}.disclosure[open] summary:after{content:"−"}.disclosure p,.disclosure pre{font-size:12px;color:var(--sub);margin-top:14px}.disclosure pre{white-space:pre-wrap}.demo-foot{margin-top:18px;color:#899095;font-size:10px;display:flex;justify-content:space-between}.demo-foot a{color:var(--sub)}dialog{border:1px solid var(--line);border-radius:14px;padding:26px;max-width:440px;width:calc(100% - 30px)}dialog::backdrop{background:#16271e33}dialog h2{font-size:19px;margin-bottom:7px}dialog label{display:block;font-size:12px;margin:18px 0 6px}dialog input,dialog select{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;background:white}dialog .actions{display:flex;gap:9px;margin-top:20px}#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#263f35;color:white;padding:12px 20px;border-radius:9px;font-size:12px;max-width:90%;box-shadow:0 3px 20px #0001}#toast:empty{display:none}.mobile-label{display:none}@media(min-width:1450px){.scene-image img{height:380px}}@media(max-width:1100px){main{padding:24px}.shell{grid-template-columns:200px minmax(0,1fr)}.content{grid-template-columns:minmax(0,1fr)}.review{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}.review h2,.review>.sub{grid-column:1/-1}.action-area{grid-column:1/-1}.scene-image img{height:310px}.flow{gap:12px;flex-wrap:wrap}.connector{display:none}.step{font-size:11px}}@media(max-width:700px){header{padding:0 18px;height:64px}.header-note{display:none}.shell{display:block}aside{border-right:0;border-bottom:1px solid var(--line);padding:16px;display:flex;gap:12px;align-items:center}aside>.overline,.sidebar-section,.side-footer{display:none}.room{width:auto;flex:1}.new{margin:0;width:auto}main{padding:22px 16px}.title-row{align-items:flex-start}h1{font-size:24px}.flow{flex-wrap:wrap;gap:12px}.connector{display:none}.progress-top .sub{display:none}.review{display:block}.scene-image img{height:260px}.demo-foot{display:block}.demo-foot span{display:block;margin:5px 0}.preview-footer{gap:12px}.badge{font-size:10px}}
+
+[hidden]{display:none!important}a.button{display:inline-block;text-decoration:none;border:1px solid var(--line);border-radius:9px;padding:10px 15px;color:var(--ink);font-weight:550;font-size:12px}button:disabled{opacity:.4;cursor:not-allowed}a{color:var(--green)}.muted{color:var(--sub);font-size:12px}.path{overflow-wrap:anywhere;font-size:10px;color:var(--sub)}.run-list{margin-top:20px}.run{display:block;width:100%;text-align:left;margin:9px 0;padding:13px;overflow-wrap:anywhere}.run.selected{border-color:#c8ddd2;background:var(--soft)}.run small{display:block;margin-top:5px;color:var(--sub);font-weight:400;font-size:10px}.new{margin-top:0}.stages{display:flex;flex-wrap:wrap;gap:8px}.stage{flex:1;min-width:95px;font-size:11px;border:1px solid var(--line);border-radius:8px;padding:10px}.stage b{display:block;font-weight:550}.stage span{color:var(--sub);font-size:10px}.stage.completed{background:var(--soft);color:var(--green)}.stage.running{border-color:var(--green)}.stage.failed{border-color:#d8a2a0;color:#a63737}.stage.skipped{opacity:.6}.previews{padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}.previews figure{margin:0;min-width:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}.previews figure:first-child{grid-column:1/-1}.previews img{display:block;width:100%;max-height:440px;object-fit:contain;background:#f8f9f8}.previews figcaption{padding:9px;font-size:10px;color:var(--sub);overflow-wrap:anywhere}.previews a{font-size:12px}.empty{padding:20px;color:var(--sub);font-size:12px}.review{display:block!important}.review-heading{display:flex;justify-content:space-between;gap:10px}.review-heading strong{font-size:12px;color:var(--green)}#reviewIssues{list-style:none;padding:0;margin:16px 0;max-height:380px;overflow:auto}#reviewIssues li{border-top:1px solid var(--line);padding:13px 0;font-size:12px;overflow-wrap:anywhere}#reviewIssues p{margin-top:5px;color:var(--sub)}.quality{font-size:14px;font-weight:550;margin:6px 0 12px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.action-area .actions{display:block}.action-area button{display:block}#guidance{line-height:1.65}.errorbox{color:#a32c2c;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:12px}#notice{display:none;padding:13px 16px;background:var(--soft);border:1px solid #d8e5dc;border-radius:9px;margin-bottom:20px;font-size:12px;overflow-wrap:anywhere}#notice.error{background:#fff7f6;border-color:#e7bbbb;color:#9c3030}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:350px;overflow:auto;font:11px/1.7 ui-monospace,monospace;background:#f7f9f8;padding:14px;border-radius:8px}.empty-workspace{padding:60px 25px;text-align:center}.empty-workspace p{margin:12px 0}.empty-workspace button{margin:12px}.dialog-footer{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);display:flex;justify-content:flex-end}dialog{max-width:520px;max-height:90vh;overflow:auto}dialog .path{margin:5px 0 10px}.checkbox input{width:auto;margin-right:8px}dialog details{margin-top:17px}dialog summary{font-size:12px;color:var(--sub)}#formNotice{margin-top:12px}.content{align-items:start}.card.review{position:sticky;top:18px}.pill{white-space:nowrap}.title-row{overflow-wrap:anywhere}#runTitle{overflow-wrap:anywhere}body{overflow-wrap:break-word}@media(max-width:1100px){.card.review{position:static}}@media(max-width:700px){aside{display:block}.run-list{display:flex;overflow-x:auto;gap:8px;margin-top:12px}.run{min-width:180px;max-width:220px;flex-shrink:0;margin:0}.sidebar-section{display:none}.new{width:100%}.title-row{flex-wrap:wrap}.stage{min-width:90px}header .badge{max-width:130px;font-size:9px}.header-note{display:none}.card.review{position:static}}
+
+.stages{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:10px}.stage{height:88px;min-width:0;padding:12px;display:grid;grid-template-rows:20px 18px 16px;gap:3px}.stage b,.stage span,.stage small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stage b{font-size:12px}.stage span{font-size:11px}.stage small{font-size:10px;color:var(--sub)}.previews{display:block}.output-section{margin-bottom:20px}.output-section h3{padding:3px 0 8px}.output-section>p{margin:0 0 10px}.output-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}.output-grid figure:first-child{grid-column:auto}.output-grid figcaption{font-size:12px;color:var(--ink)}.output-grid figcaption small{display:block;margin-top:5px;font-size:10px;color:var(--sub)}.file-action{display:block;padding:14px;background:#f6f8f7;font-weight:550;text-decoration:none}.output-history{margin-top:12px}.output-history summary{font-size:12px;color:var(--sub);padding:8px 0}#actionFeedback{margin:10px 0;color:var(--green);overflow-wrap:anywhere}#connectionNotice{padding:14px 16px;border:1px solid #e5bd86;border-radius:9px;background:#fff8e9;color:#775112;margin-bottom:18px;font-size:13px}#errorDetails summary{font-size:12px;color:#9a3737}#errorDetails pre{max-height:180px}#runError{max-height:120px;overflow:auto}.content{grid-template-columns:minmax(0,1fr) 290px}@media(max-width:1100px){.content{grid-template-columns:1fr}}@media(max-width:700px){.stages{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.preview-viewer{--preview-height:440px;--preview-columns:2;width:100%;margin-inline:auto;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.preview-frame{position:relative;width:100%;aspect-ratio:3/2;background:#f7f8f7}
+.preview-original{display:block;width:100%;height:100%}
+.previews .preview-image{display:block;width:100%;height:100%;max-height:none;object-fit:contain}
+.preview-error{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--sub);font-size:13px;pointer-events:none}
+.preview-navigation{display:flex;justify-content:center;align-items:center;gap:16px;padding:12px;border-top:1px solid var(--line)}
+.preview-navigation button{width:36px;height:36px;padding:0;font-size:23px;line-height:1}
+.preview-count{min-width:60px;text-align:center;color:var(--sub);font-size:13px;font-variant-numeric:tabular-nums}
+@media(pointer:coarse){.preview-navigation button{width:44px;height:44px}}
+.preview-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line)}
+.preview-pair>div{min-width:0;background:white}.preview-label{padding:10px 14px;font-size:12px;color:var(--sub)}
+.preview-pair .preview-frame{max-height:none;overflow:hidden}.preview-original svg{display:block;width:100%;height:100%;overflow:hidden}
+.preview-note{padding:12px 0 18px}.other-file{display:block;padding:6px 0;overflow-wrap:anywhere}
+.preview-tabs{display:flex;gap:6px;margin:0 0 14px}.preview-tabs button{font-size:12px;padding:7px 12px}.preview-tabs .active{background:var(--soft);border-color:#c8ddd2;color:var(--green)}.preview-viewer+.output-section{margin-top:18px}
+textarea{width:100%;min-height:100px;resize:vertical;font:inherit;border:1px solid var(--line);border-radius:8px;padding:10px} .version-note{margin:10px 0;color:var(--sub);font-size:12px}
+
+/* Compact workspace: actions live with their result; details stay collapsed. */
+.title-row{flex-wrap:nowrap;gap:16px;align-items:center;margin-bottom:18px}.title-row>div:first-child{flex:1;min-width:0}
+.title-actions{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.run-menu{position:relative}.run-menu>summary{list-style:none;display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:9px;font-size:23px;line-height:1}
+.run-menu>summary::-webkit-details-marker{display:none}.menu-links{position:absolute;right:0;top:46px;width:230px;padding:6px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px #17251e16;z-index:10}
+.menu-links a{display:block;padding:12px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:500;color:var(--ink)}.menu-links a:hover{background:var(--soft)}
+.progress-card{padding:16px 20px}.progress-line{display:flex;align-items:center;justify-content:space-between;gap:12px}.progress-line p{font-size:13px;font-weight:500}.step-details{position:relative}.step-details>summary{font-size:12px;color:var(--sub)}
+#stepDetails{margin-top:10px}#stepDetails>.stages{margin-top:14px}#stepDetails .path{margin-top:12px}.stage{height:88px}
+.action-panel{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}.action-panel .actions{margin-top:10px}.action-panel p:empty{display:none}
+.content{display:block}.result-card{margin-top:16px}.result-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 20px;border-top:1px solid var(--line)}
+#resultActions:has(>button[hidden]):has(>div[hidden]){display:none}
+.result-actions{flex-wrap:wrap}.result-actions>button{order:0}.file-downloads{order:1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-left:auto;min-width:0}
+.file-links{position:static;display:flex;flex-wrap:wrap;gap:8px;min-width:0}.file-links a.button,.context-action{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;font-size:13px;font-weight:500;line-height:20px;border:1px solid var(--line);border-radius:9px;text-decoration:none;background:white;color:var(--ink);max-width:100%}
+.context-action.primary{color:white;background:var(--green);border-color:var(--green)}
+.activity-body{padding-top:18px}.activity-body .review{padding:0}.activity-body .quality{font-size:13px}.activity-body .action-area{border:0;margin:0;padding:0}.activity-body details{margin-top:14px}.activity-body summary{font-size:12px;color:var(--sub)}
+#candidatePreviews{padding:12px 0}#activityDetails>summary{font-size:13px}.candidate-note{font-size:12px;color:var(--sub);margin:12px 0}
+#reviewBadge{margin-left:auto;margin-right:12px;font-variant-numeric:tabular-nums}.disclosure>summary{gap:10px}
+@media(max-width:700px){.title-row{flex-wrap:wrap}.title-actions{margin-left:auto}.preview-pair{grid-template-columns:1fr}.preview-viewer{--preview-height:360px;--preview-columns:1}.result-actions{padding:12px;flex-wrap:wrap}h1{font-size:22px}.menu-links{max-width:calc(100vw - 48px)}}
+
+/* Full-width workspace, compact edge spacing, and an independently toggleable sidebar. */
+header{padding:0 16px;gap:12px}.header-start{display:flex;align-items:center;gap:12px;min-width:0}
+.sidebar-toggle{display:grid;place-items:center;width:36px;height:36px;padding:7px;flex-shrink:0;border-color:transparent}
+.sidebar-toggle svg{display:block;width:20px;height:20px}
+.shell{max-width:none;width:100%;margin:0;grid-template-columns:228px minmax(0,1fr)}
+#workspaceSidebar{padding:24px 12px;}
+#workspaceSidebar .run{padding:10px 12px}#workspaceSidebar .sidecard{padding:12px}
+.shell.sidebar-collapsed{grid-template-columns:minmax(0,1fr)}
+#stepDetails{margin-top:12px}#stepDetails>.stages{margin-top:0}
+@media(max-width:700px){header{padding:0 12px}.header-start{gap:8px}.brand{gap:8px;font-size:17px}#workspaceSidebar{padding:16px 12px}.shell{display:block}}
+/* Planning conversation: collapsed by default, transcript above a bottom composer. */
+.conversation-body{padding:0 16px 16px}.chat-context{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}
+#chatHistory{max-height:430px;overflow-y:auto;overscroll-behavior:contain;padding:4px 0 12px}
+.chat-turn{padding:12px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.65}
+.chat-turn p{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0}.chat-role{font-size:11px;font-weight:600;color:var(--sub)}
+.user-message{background:var(--soft);border-radius:10px;padding:9px 12px}.chat-plan{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:12px}.chat-plan-title{font-weight:600}.chat-question{border-left:2px solid var(--green);padding-left:12px}
+.chat-compose{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
+#chatInput{display:block;width:100%;min-height:70px;max-height:180px;resize:vertical;border:0;padding:4px;font:inherit;font-size:13px}
+.chat-compose-actions{display:flex;justify-content:flex-end;gap:8px;align-items:center}.chat-compose-actions .muted{margin-right:auto;font-size:10px}
+#chatNotice:empty{display:none}
+/* v0.10.2: conversation-first shell; viewport, panels and composer have separate scroll ownership. */
+html,body{height:100%;overflow:hidden}body{height:100vh;height:100dvh;display:flex;flex-direction:column}
+header{height:58px;min-height:58px;padding:0 16px;gap:12px;flex:none;background:#fff;z-index:30}
+.header-start{flex:1;min-width:0}.brand{white-space:nowrap;font-size:19px}.logo{background:var(--green);color:#fff;width:32px;height:32px;flex:0 0 32px;border-radius:9px;display:grid;place-items:center}.logo svg{width:20px;height:20px;display:block}
+#runTitle{font-size:15px;font-weight:500;letter-spacing:0;border-left:1px solid var(--line);padding-left:18px;margin:0 0 0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-end{display:flex;align-items:center;gap:16px;flex:none}#summaryToggle{display:flex;align-items:center;gap:8px;border:0;padding:7px;font-size:13px;font-weight:500}#summaryToggle svg{width:22px;height:22px}
+.shell{max-width:none;width:100%;margin:0;--workspace-width:218px;--summary-width:var(--summary-user-width,370px);display:grid;grid-template-columns:var(--workspace-width) minmax(0,1fr) var(--summary-width);flex:1;min-height:0;position:relative}
+.shell.sidebar-collapsed{--workspace-width:0px;grid-template-columns:var(--workspace-width) minmax(0,1fr) var(--summary-width)}
+.shell.summary-collapsed{--summary-width:0px}
+#workspaceSidebar{padding:22px 12px 12px;grid-column:1;grid-row:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:#f8f9f8;border-right:1px solid var(--line)}
+#workspaceSidebar h2{font-size:16px;margin:0 4px 20px}.new{width:100%;font-size:13px;font-weight:500;color:var(--green);margin:0;padding:9px 12px;background:white}
+.recent-label{font-size:12px;color:var(--sub);margin:22px 4px 6px}.run-list{flex:1;min-height:0;overflow-y:auto;display:block;margin:0}.run{border:0;background:transparent;border-radius:9px;width:100%;min-width:0;max-width:none;margin:4px 0;padding:10px 12px!important;font-size:13px;font-weight:550}.run.selected{background:#e5efea}.run small{font-size:10px;margin-top:3px}.run .run-state{font-weight:400;color:var(--sub);font-size:11px}.sidebar-bottom{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:18px 4px 0;font-size:11px;color:var(--sub)}#connectionStatus:before{content:'●';color:var(--green);font-size:9px;margin-right:7px}
+main{grid-column:2;grid-row:1;padding:0;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+#notice,#connectionNotice{margin:10px 16px 0;flex:none;max-height:110px;overflow:auto;padding:9px 12px;font-size:12px}
+#emptyWorkspace{margin:auto;border:0;padding:30px 20px}.empty-workspace h2{font-size:21px}
+#workspace{display:flex;flex-direction:column;flex:1;min-height:0}
+#conversationPanel{display:flex;flex-direction:column;flex:1;min-height:0}
+.conversation-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:23px 24px 8px;flex:none}.conversation-heading h2{font-size:17px}.conversation-heading .muted{font-size:11px}
+.conversation-status{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 24px 8px;flex:none;min-height:28px}.conversation-status .muted{font-size:11px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.conversation-body{display:flex;flex-direction:column;flex:1;min-height:0;padding:0 24px}
+#chatHistory{flex:1;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain;padding:12px 0 24px;width:100%;max-width:780px;align-self:center;scrollbar-gutter:stable}
+.chat-turn{border:0;padding:0 0 24px;font-size:14px;line-height:1.7}.chat-turn .chat-role{color:var(--ink);font-size:12px;margin:18px 0 8px;font-weight:600}.chat-turn .user-role{display:none}.chat-turn .user-message{margin-left:auto;width:fit-content;max-width:92%;padding:10px 14px;background:#f0f2f2;border-radius:14px}.chat-message{white-space:pre-wrap;overflow-wrap:anywhere}
+.chat-plan-link{display:inline-flex;align-items:center;gap:6px;margin-top:10px;color:var(--green);border:1px solid #cbded4;font-size:12px;font-weight:500;padding:5px 9px;border-radius:6px;background:white}.chat-question{font-size:13px}.chat-turn .errorbox{font-size:12px}
+.chat-composer-dock{flex:none;width:100%;max-width:780px;align-self:center;padding:8px 0 12px;background:#fff}
+.chat-compose{padding:10px 14px;border:1px solid #dfe3e2;border-radius:15px;box-shadow:0 2px 5px #17251e06}
+#chatInput{min-height:58px;height:62px;max-height:140px;resize:vertical;font-size:14px;line-height:1.5;outline-offset:0}
+.chat-compose-actions{display:flex;gap:10px;align-items:center}.chat-compose-actions .muted{font-size:11px}.send-button{width:34px;height:34px;min-width:34px;padding:0;border-radius:50%;background:#252827;color:white;border-color:#252827;font-size:22px;font-weight:400}.send-button:hover{background:#424744}.send-button.retry-send{font-size:10px;width:auto;padding:0 10px;border-radius:18px}.chat-footer{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--sub);font-size:10px;padding-top:9px;position:relative}#chatTarget{display:none}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#summaryPanel{min-width:0;min-height:0;overflow-y:auto;grid-column:3;grid-row:1;border:0;border-left:1px solid var(--line);padding:22px 16px 24px;background:#fff;display:block;overscroll-behavior:contain}
+.summary-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}.summary-heading h2{font-size:17px}.pill{font-size:10px;background:#f4f5f4;color:#58645e}#summaryEmpty{padding-top:20px}
+#summaryPanel .card-head{padding:0;border:0;margin-bottom:10px;align-items:flex-start}#summaryPanel .card-head h3{font-size:14px}#editOutcome{font-size:10px}
+#summaryPanel .result-card{margin:0;padding:0 0 16px;border:0;border-bottom:1px solid var(--line);border-radius:0;overflow:visible}
+#summaryPanel .previews{padding:0}#summaryPanel .empty{font-size:12px;padding:12px 0;line-height:1.6}.preview-label{padding:7px 9px;font-size:10px}.preview-navigation{padding:7px;gap:12px}.preview-navigation button{width:28px;height:28px;font-size:20px}.preview-count{font-size:11px}.preview-viewer{--preview-height:220px}.preview-pair{grid-template-columns:repeat(2,minmax(0,1fr))}.preview-tabs{margin-bottom:8px}.preview-tabs button{font-size:10px;padding:5px 8px}
+#summaryPanel .result-actions{padding:10px 0 0;border:0;justify-content:flex-start}#summaryPanel .context-action{font-size:12px;min-height:32px;padding:6px 10px;font-weight:500;background:#fff;color:var(--green);border:1px solid var(--line)}
+#resultActions:has(>button[hidden]){display:none}
+#planSummary{border:0;border-bottom:1px solid var(--line);border-radius:0;padding:18px 0;margin:0}.plan-heading{display:flex;justify-content:space-between;gap:8px;align-items:center}.plan-heading h3{font-size:14px}#planLabel{font-size:10px;text-align:right}#planContent{font-size:12px;line-height:1.6}#planContent .chat-role{font-size:11px;margin:12px 0 3px}#planContent p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}#planContent details{margin-top:12px}#planContent summary{font-size:11px;color:var(--sub)}#planContent .muted{font-size:10px;margin-top:10px}
+#summaryPanel .disclosure{padding:12px 0;margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0}#summaryPanel .disclosure>summary{display:flex;align-items:center;gap:8px;justify-content:flex-start;list-style:none;font-size:12px;color:var(--ink)}#summaryPanel .disclosure summary:after{content:none}#summaryPanel .disclosure>summary:before{content:'›';font-size:18px;line-height:18px;color:var(--sub);flex:none}#summaryPanel .disclosure[open]>summary:before{transform:rotate(90deg)}#summaryPanel .disclosure>summary .muted{margin-left:auto;text-align:right;font-size:10px;max-width:55%}.activity-body{padding-top:12px}
+#stepDetails{margin-top:12px}#stepDetails .stages{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.stage{height:78px;padding:8px}.stage b{font-size:11px}.stage span{font-size:10px}#stepDetails .muted,#stepDetails .version-note{font-size:11px;margin:8px 0 0}
+.action-panel{border:1px solid #dce8e1;border-radius:9px;background:#f8fbf9;padding:12px;margin-top:14px}.action-panel .actions{gap:6px}.action-panel button{font-size:12px;padding:7px 10px}.action-panel p{font-size:11px;line-height:1.6}.action-panel p:empty{display:none}
+#summaryPanel .files-body{padding-top:12px}.file-downloads{display:block;margin:0}.file-links{position:static;display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.file-links a.button{font-size:11px;min-height:32px;padding:5px 8px}.archive-links{display:flex;flex-direction:column;gap:9px;margin-top:14px}.archive-links a{font-size:12px;text-decoration:none}.archive-links a:hover{text-decoration:underline}.other-file{font-size:11px}#summaryPanel #reviewIssues{max-height:none}#reviewBadge{margin-right:0}#summaryPanel #reviewScore{font-size:11px}
+@media(max-width:1250px){.shell{--workspace-width:190px;--summary-width:var(--summary-user-width,330px)}.conversation-body{padding:0 18px}.conversation-heading{padding-left:18px;padding-right:18px}.conversation-status{padding-left:18px;padding-right:18px}}
+@media(max-width:1100px){.shell{grid-template-columns:var(--workspace-width) minmax(0,1fr)}.shell.sidebar-collapsed{grid-template-columns:0 minmax(0,1fr)}#summaryPanel{position:absolute;right:0;top:0;bottom:0;width:min(370px,100%);z-index:20;box-shadow:-8px 0 24px #17251e12}.header-end{gap:8px}.badge{font-size:9px}}
+@media(max-width:760px){header{padding:0 10px;gap:6px}.brand{font-size:15px;gap:5px}#runTitle{font-size:12px;margin-left:3px;padding-left:9px}.header-end .badge{display:none}#summaryToggle{padding:6px;font-size:11px}.header-start{gap:7px}.shell,.shell.sidebar-collapsed{display:grid;grid-template-columns:minmax(0,1fr)}main{grid-column:1}#workspaceSidebar{position:absolute;left:0;top:0;bottom:0;width:min(240px,85%);z-index:21;box-shadow:8px 0 24px #17251e12}.conversation-heading{padding:18px 14px 6px}.conversation-status{padding:0 14px 6px}.conversation-body{padding:0 14px}.chat-composer-dock{padding-bottom:max(10px,env(safe-area-inset-bottom))}.chat-compose-actions .muted{font-size:9px}#chatInput{font-size:16px}.chat-turn{font-size:13px}.sidebar-toggle{width:30px}.chat-footer{font-size:9px}.preview-pair{grid-template-columns:repeat(2,minmax(0,1fr))}.preview-viewer{--preview-columns:2}}
+@media(max-height:600px){.conversation-heading{padding-top:10px}.conversation-status{padding-bottom:2px}#chatInput{min-height:40px;height:42px;max-height:80px}.chat-composer-dock{padding-top:4px;padding-bottom:6px}.chat-footer{padding-top:4px}}
+
+#snapshotDialog{width:min(1200px,calc(100vw - 32px));max-width:1200px;max-height:92dvh;padding:18px}.snapshot-dialog-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.snapshot-dialog-heading h2{margin:0}#snapshotLarge{padding:0}#snapshotLarge .preview-viewer{--preview-height:580px}#expandSnapshot{margin-left:auto}#snapshotLarge .preview-pair{grid-template-columns:repeat(2,minmax(0,1fr))}
+#summaryPanel .preview-viewer{--preview-height:clamp(220px,calc(var(--summary-user-width,370px) * .65),520px)}
+#summaryResize{position:absolute;top:0;bottom:0;right:calc(var(--summary-width) - 4px);width:9px;z-index:24;cursor:col-resize;touch-action:none;user-select:none}#summaryResize:after{content:"";position:absolute;top:0;bottom:0;left:3px;width:3px;background:transparent}#summaryResize:hover:after,#summaryResize:focus-visible:after,#summaryResize.dragging:after{background:#77aa99}#summaryResize:focus-visible{outline:none}@media(max-width:1100px){#summaryResize{display:none!important}}
+.chat-evidence{margin-top:12px;font-size:12px;color:var(--sub);max-width:560px}.evidence-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}.evidence-thumb{display:block;min-width:0;padding:0;overflow:hidden;border-radius:10px;background:#f7f8f8}.evidence-thumb img{display:block;width:100%;height:140px;object-fit:contain}.evidence-thumb span{display:block;padding:5px;font-size:11px;font-weight:400}#evidenceDialog{width:min(1200px,calc(100vw - 32px));max-width:1200px;padding:16px}#evidenceImage{display:block;max-width:100%;max-height:76dvh;width:auto;height:auto;object-fit:contain;margin:auto}#evidenceTitle{overflow-wrap:anywhere;font-size:14px}@media(max-width:600px){.evidence-thumb img{height:110px}}
+
+.chat-agent-label{display:flex;align-items:center;gap:7px}.chat-agent-icon{width:22px;height:22px;flex:0 0 22px;border-radius:6px;display:grid;place-items:center;background:var(--green);color:#fff}.chat-agent-icon svg{display:block;width:15px;height:15px}
+.session-operation{margin:6px 24px;padding:10px 12px;background:#f5f8f6;border:1px solid var(--line);border-radius:8px;font-size:12px;flex:none;max-height:160px;overflow:auto}.session-operation p{color:var(--sub);margin-top:4px}.session-operation button{font-size:11px;padding:5px 8px}#confirmPlan{margin-top:12px;font-size:12px}#confirmHint{font-size:11px;margin-top:8px}#sessionHistoryItems{font-size:11px;overflow-wrap:anywhere}#sessionHistoryItems p{margin-top:10px}
+#diagnostics[aria-disabled="true"]{opacity:.5;cursor:not-allowed}#diagnosticsHint{font-size:11px;line-height:1.5}.archive-links .button{align-self:flex-start}
+
+#fileActions{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px;margin-top:8px;overflow-x:auto;padding-bottom:3px}#fileActions #resultDownloads,#fileActions #resultDownloadLinks{display:contents}#fileActions a.button{display:inline-flex;align-items:center;justify-content:center;flex:0 0 84px;width:84px;height:34px;min-height:34px;margin:0;padding:0 8px;font-size:11px;font-weight:550;line-height:1;white-space:nowrap;text-decoration:none}#diagnosticsHint{display:block;margin-top:6px}
 </style></head><body>
-<header><div><h1>Room Agent <span style="font-weight:400;color:var(--muted)">/ 场景工作台</span></h1><p class="muted">已有场景 · 构建与渲染 · 独立评审 · 分批修复</p></div><span class="tag">第二阶段验收 · 对话功能尚未接入</span></header>
-<main><aside><section class="card"><h2>开始一次评审</h2><p class="muted">选择明确的已有结果。不会重新导入扫描或重建神经网格。</p><label for="source">已有运行目录</label><select id="source"><option value="">正在读取…</option></select><p class="path" id="sourcePath"></p><label for="batches">最多允许修复批次</label><select id="batches"><option value="0">0 · 只构建和评审</option><option value="1" selected>1 · 手动启动一批</option><option value="2">2 · 每批分别确认</option><option value="3">3 · 每批分别确认</option></select><label for="seconds">每批修复时间上限（秒）</label><input id="seconds" type="number" min="120" max="1800" value="900"><div class="actions"><button id="create">创建并开始</button><button class="secondary" id="reloadSources">刷新</button></div></section><section class="card"><h2>任务记录</h2><div id="runs" class="muted">正在读取…</div></section><p class="muted">页面每 2 秒更新。关闭网页不会停止任务；停止服务器上的启动脚本会停止本服务启动的工作进程，并保留检查点。</p></aside>
-<div><div id="notice" role="status"></div><section class="card"><h2 id="runTitle">选择一个任务</h2><p id="runId" class="path"></p><div class="metrics"><div class="metric"><span class="muted">执行状态</span><strong id="execution">—</strong></div><div class="metric"><span class="muted">质量状态</span><strong id="quality">—</strong></div><div class="metric"><span class="muted">当前轮次 / 节点</span><strong id="current">—</strong></div></div><p id="repairState" class="muted"></p><p id="runError" class="errorbox"></p><div class="actions"><button id="continue" class="secondary" disabled>复评 / 继续</button><button id="repair" disabled>修复一批</button><button id="finish" class="secondary" disabled>结束</button><a id="download" class="button secondary" hidden>下载返回包</a></div><p class="muted">质量未通过、修复超时和技术执行错误分别显示。修复后必须重新构建并评审，不以编辑完成代替质量通过。</p></section>
-<section class="card"><h2>评审结果 <span id="reviewScore" style="float:right;color:var(--accent)">—</span></h2><p id="reviewSummary" class="muted">尚未完成独立视觉评审。</p><ul id="reviewIssues" style="padding-left:20px;overflow-wrap:anywhere"></ul></section><section class="card"><h2>流程节点</h2><div class="stages" id="stages"><p class="empty">创建任务后显示节点状态。</p></div></section><section class="card"><h2>预览与报告</h2><div class="previews" id="previews"><p class="empty">渲染完成后显示图片；长时间渲染期间可以查看下方日志。</p></div></section><section class="card"><h2>运行日志</h2><pre id="log">等待任务…</pre><details><summary>节点事件</summary><pre id="events"></pre></details></section></div></main>
+<header>
+<div class="header-start"><button id="sidebarToggle" type="button" class="sidebar-toggle" aria-controls="workspaceSidebar" aria-expanded="true" aria-label="Hide workspace" title="Hide workspace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button><div class="brand"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10 12 3l8 7v11H4Z"/><path d="M9 21v-8h6v8"/></svg></span>Spatial Agent</div><h1 id="runTitle">Workspace</h1></div>
+<div class="header-end"><span class="badge">v0.10.2</span><button id="summaryToggle" type="button" aria-controls="summaryPanel" aria-expanded="true" title="Hide summary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></svg><span>Summary</span></button></div>
+</header>
+<div class="shell" id="workspaceShell">
+<aside id="workspaceSidebar" aria-label="Workspace"><h2>Workspace</h2><button id="newTaskButton" class="new">+ New task</button><p class="recent-label">Recent</p><div id="runs" class="run-list"><p class="sub">Loading tasks…</p></div><div class="sidebar-bottom"><span id="connectionStatus">Connected</span><span id="queueSummary" class="muted">—</span></div></aside>
+<main>
+<div id="connectionNotice" role="alert" hidden></div><div id="notice" role="status"></div>
+<section id="emptyWorkspace" class="empty-workspace"><h2>Your spatial workspace</h2><p class="muted">Choose an existing version to start a conversation.</p><button id="emptyNewTask">+ New task</button></section>
+<div id="workspace" hidden>
+<section id="conversationPanel" aria-label="Conversation">
+<div class="conversation-heading"><h2>Conversation</h2><span id="chatState" class="muted">Plan, confirm, edit</span></div>
+<div class="conversation-status"><span id="conversationTaskState" class="muted"></span><button id="showTaskActions" class="textbutton" hidden>View actions</button></div>
+<section id="sessionOperation" class="session-operation" hidden><strong id="sessionOperationText"></strong><p id="sessionOperationChange"></p><div class="actions"><button id="sessionResume" hidden>Resume edit</button><button id="sessionDiscard" hidden>Keep current result</button><button id="sessionCancel" hidden>Cancel queued edit</button></div></section>
+<div class="conversation-body"><div id="chatHistory" role="log" aria-live="polite"></div>
+<div class="chat-composer-dock"><p id="chatNotice" class="errorbox" role="status"></p>
+<div class="chat-compose"><label class="sr-only" for="chatInput">Message Spatial Agent</label><textarea id="chatInput" maxlength="4000" placeholder="Describe a change or ask a question…"></textarea><div class="chat-compose-actions"><span class="muted">Enter to send · Shift+Enter for a new line</span><button id="chatSend" type="button" class="send-button" aria-label="Send message" title="Send · Enter">↑</button></div></div>
+<div class="chat-footer"><span id="chatTarget"></span><span>Changes run only after confirmation</span></div>
+</div></div>
+</section></div>
+</main>
+<div id="summaryResize" role="separator" tabindex="0" aria-label="Resize summary" aria-controls="summaryPanel" aria-orientation="vertical" aria-valuemin="300" aria-valuemax="900" aria-valuenow="370" title="Drag to resize · Double-click to reset · Arrow keys to adjust"></div>
+<aside id="summaryPanel" aria-label="Summary"><div class="summary-heading"><h2>Summary</h2><span id="execution" class="pill">—</span></div><p id="summaryEmpty" class="muted">Select a version to see its results.</p><div id="summaryContent" hidden>
+<section id="resultCard" class="result-card"><div class="card-head"><h3>Snapshot</h3><button id="expandSnapshot" class="textbutton" type="button" hidden>Expand</button><span id="editOutcome" class="muted" hidden></span></div><div class="previews" id="previews"><p class="empty">No output yet.</p></div><div id="resultActions" class="result-actions"><button id="editVersion" class="context-action" hidden>Edit this version</button></div></section>
+<section id="planSummary" class="chat-plan" hidden><div class="plan-heading"><h3>Draft plan</h3><span id="planLabel" class="muted">Not scheduled</span></div><div id="planContent"></div><button id="confirmPlan" class="primary" hidden>Confirm &amp; run</button><p id="confirmHint" class="muted" hidden></p></section>
+<section id="actionPanel" class="action-panel" hidden><p id="nextStep" class="muted"></p><p id="runError" class="errorbox" role="alert"></p><p id="actionFeedback" role="status" class="muted"></p><div class="actions"><button id="continue" disabled>Resume</button><button id="repair" class="primary" disabled>Repair &amp; review</button><button id="finish" disabled>Finish without changes</button><button id="cancelQueue" disabled hidden>Cancel queued task</button></div></section>
+<details id="progressDetails" class="disclosure"><summary><span>Steps</span><span id="stepSummary" role="status" class="muted">Waiting</span></summary><div id="stepDetails" aria-label="Reconstruction progress"><div id="stages" class="stages"></div><p class="version-note" id="changeRequest" hidden></p><p id="current" class="muted"></p><p id="repairState" class="muted"></p><p id="completionState" class="muted"></p></div></details>
+<details id="reviewDetails" class="disclosure"><summary><span>Review findings</span><span id="reviewBadge" class="muted">Not reviewed</span></summary><div class="activity-body"><section class="review"><p id="quality" class="quality">—</p><p id="guidance" class="muted"></p><div id="reviewCard"><div class="review-heading"><h3>Independent review</h3><strong id="reviewScore">—</strong></div><p id="reviewProgress" class="muted" role="status" hidden></p><p id="reviewSummary" class="muted">No review yet.</p><ul id="reviewIssues"></ul></div></section></div></details>
+<details id="runMenu" class="disclosure files-disclosure" hidden><summary id="moreActions">Files</summary><div class="files-body"><span class="muted">Downloads</span><div id="fileActions"><div id="resultDownloads" class="file-downloads" hidden><div id="resultDownloadLinks" class="file-links"></div></div><a id="diagnostics" class="button" aria-disabled="true" title="Download diagnostics">Diagnostics</a></div><span id="diagnosticsHint" class="muted">Select a task to download diagnostics.</span></div></details>
+<details id="sessionHistory" class="disclosure" hidden><summary>Operation history</summary><div id="sessionHistoryItems"></div></details>
+<details id="activityDetails" class="disclosure"><summary>More details</summary><div class="activity-body"><details id="errorDetails" hidden><summary>Error details</summary><pre id="technicalError"></pre></details><details id="candidateDetails" hidden><summary>Saved candidate</summary><p class="candidate-note">This saved attempt has not replaced the current result.</p><div class="previews" id="candidatePreviews"></div></details><p><a id="download" hidden>Download full archive</a></p><details id="logDetails"><summary>Logs</summary><pre id="log">Waiting for output…</pre><details><summary>Node events</summary><pre id="events"></pre></details></details></div></details>
+</div></aside></div>
+<dialog id="evidenceDialog" aria-labelledby="evidenceTitle"><div class="snapshot-dialog-heading"><h2 id="evidenceTitle">Evidence</h2><button id="closeEvidence" type="button">Close</button></div><img id="evidenceImage" alt="Evidence image"></dialog>
+<dialog id="snapshotDialog" aria-labelledby="snapshotTitle"><div class="snapshot-dialog-heading"><h2 id="snapshotTitle">Snapshot</h2><button id="closeSnapshot" type="button">Close</button></div><div id="snapshotLarge" class="previews"></div></dialog>
+<dialog id="newTask" aria-labelledby="taskTitle"><h2 id="taskTitle">New task</h2><p class="sub">Choose a saved result or start from a scan.</p><div id="taskPicker"><label for="taskType">Task</label><select id="taskType"><option value="review" selected>Review a saved scene</option><option value="scan">Reconstruct a scan (experimental)</option></select></div><div id="formNotice" role="status"></div>
+<div id="editForm" hidden><p id="editingVersion" class="version-note" hidden></p><div id="versionPicker"><label for="version">Scene version</label><select id="version"><option value="">Choose a completed version</option></select><p id="versionInfo" class="version-note"></p><button id="openVersion" type="button">Open selected version</button></div><label for="editInstruction">What would you like to change?</label><textarea id="editInstruction" maxlength="4000" placeholder="Move the bed 20 cm toward the window. Keep everything else unchanged."></textarea><p class="version-note">Creates a separate version. Existing scenes stay unchanged. Builds, renders and independent review use model and compute time.</p><button id="createEdit" class="primary">Create version &amp; run</button></div><div id="reviewForm"><label for="source">Saved result</label><select id="source"><option value="">Loading…</option></select><p class="path" id="sourcePath"></p><button id="reloadSources" class="textbutton" type="button">Refresh results</button><label class="checkbox"><input id="allowRepair" type="checkbox" checked>Allow me to choose a repair after review</label><p class="sub">Your original result stays unchanged. Each repair needs your action.</p><details><summary>Advanced settings</summary><label for="maxChanges">Maximum repairs</label><input id="maxChanges" type="number" min="1" max="3" step="1" value="1"><p class="sub">An upper limit, not an automatic loop.</p><label for="seconds">Time limit per repair (seconds)</label><input id="seconds" type="number" min="120" max="1800" step="1" value="900"></details><div class="actions"><button id="create" class="primary">Start review</button></div></div>
+<div id="scanForm" hidden><label for="scan">Scan archive</label><select id="scan"><option value="">Loading…</option></select><p id="scanPath" class="path"></p><button id="reloadScans" class="textbutton">Refresh scans</button><label for="scene">Scene name</label><input id="scene" type="text" placeholder="Choose a scan for a suggested name"><p class="sub" style="margin-top:12px">Select an archive already uploaded to data/raw. Input validation runs automatically before reconstruction.</p><p class="sub" style="margin-top:8px">Full reconstruction uses GPU and model services and may incur costs. Each reconstruction stage has its own checkpoint. Authoring includes bounded automatic refinement. If quality needs work, choose one repair batch at a time (up to three), or finish with issues.</p><div class="actions"><button id="rebuildScan" class="primary">Start Reconstruction</button></div></div>
+<div class="dialog-footer"><button id="closeTask">Close</button></div></dialog>
 <script>
 'use strict';
-const $=id=>document.getElementById(id);let token='',selected='',refreshing=false,actionBusy=false,previewSignature='';
-const executionNames={created:'已创建',running:'运行中',waiting_for_input:'等待操作',completed:'已完成',failed:'执行错误',interrupted:'已中断',cancelled:'已取消'};
-const qualityNames={unreviewed:'尚未评审',passed:'质量通过',not_passed:'质量未通过',check_failed:'评审未完成'};
-const nodeNames={snapshot:'保存版本',prepare:'准备输入',preflight:'环境检查',build:'构建场景',geometry:'几何检查',evidence:'选择证据',render:'配对渲染',review:'独立评审',decision:'等待操作',repair:'修复一批',finalize:'完成'};
-function notice(message,error=false){$('notice').textContent=message;$('notice').className=error?'error':'';$('notice').style.display=message?'block':'none'}
-async function api(path,body){const init=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Room-Token':token},body:JSON.stringify(body)};const r=await fetch(path,init);let data;try{data=await r.json()}catch{throw Error('服务器返回了非 JSON 响应')}if(!r.ok)throw Error(data.message||data.error||r.status);return data}
-function artifactURL(path){return '/artifact?run_id='+encodeURIComponent(selected)+'&path='+encodeURIComponent(path)}
+const $=id=>document.getElementById(id);let token='',selected=/^[a-zA-Z0-9_-]+$/.test(location.hash.slice(1))?location.hash.slice(1):'',refreshing=false,actionBusy=false,previewSignature='',currentStatus=null,scanRows=[];
+let connected=true,queueNoticeRun=null,directEditParent=null;const actionMessages=new Map(),runActivity=new Map();
+const executionNames={queued:"Queued",dispatching:"Starting",created:"Created",running:"Running",waiting_for_input:"Your decision",completed:"Finished",failed:"Execution error",interrupted:"Interrupted",cancelled:"Cancelled"};
+const qualityNames={human_review_pending:"Human review needed",unreviewed:"Not reviewed",passed:"Quality passed",not_passed:"Quality not passed",check_failed:"Review incomplete"};
+const nodeNames={inspect_current:'Check request',baseline_build:'Before build',baseline_render:'Before render',edit:'Apply change',snapshot:"Snapshot",prepare:"Prepare",preflight:"Environment",build:"Build",geometry:"Geometry",evidence:"Evidence",render:"Render",review:"Review",decision:"Your decision",repair:"Repair & review",ingest:"Ingest",reconstruct:"Reconstruct",seed:"Initial scene",author:"Author",author_decision:"Your decision",author_repair:"Repair & review",draft_export:"Export check",publish:"Publish",export_check:"Export check",finalize:"Complete",finished:"Finished"};
+function notice(message,error=false){queueNoticeRun=null;$('notice').textContent=message;$('notice').className=error?'error':'';$('notice').style.display=message?'block':'none';$('formNotice').textContent=message;$('formNotice').className=error?'errorbox':'muted'}
+function connectionState(ok){if(ok&&!connected&&['Cannot reach the web service. Check the server and SSH tunnel.','The request could not be confirmed. Reconnect and check the task status before retrying.'].includes($('notice').textContent))notice('');connected=ok;$('connectionStatus').textContent=ok?'Connected':'Disconnected';$('connectionNotice').hidden=ok;$('connectionNotice').textContent=ok?'':'Connection lost. Check that start_server.sh is still running and your SSH tunnel is connected. Displayed task data may be stale.';if(currentStatus)paint(currentStatus)}
+async function request(path,init={},seconds=15){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),seconds*1000);try{const response=await fetch(path,{...init,signal:controller.signal});const body=await response.text();connectionState(true);return {ok:response.ok,status:response.status,json:async()=>JSON.parse(body),text:async()=>body}}catch(e){connectionState(false);throw Error(init.method==='POST'?'The request could not be confirmed. Reconnect and check the task status before retrying.':'Cannot reach the web service. Check the server and SSH tunnel.')}finally{clearTimeout(timer)}}
+async function api(path,body,seconds){const init=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Room-Token':token},body:JSON.stringify(body)};const r=await request(path,init,seconds||(body===undefined?15:120));let data;try{data=await r.json()}catch{throw Error('The server returned an invalid response.')}if(!r.ok)throw Error(r.status===403?'Session expired or access denied. Refresh this page.':data.message||data.error||r.status);return data}
+function artifactURL(path,run=selected){return '/artifact?run_id='+encodeURIComponent(run)+'&path='+encodeURIComponent(path)}
 function empty(parent,text){const p=document.createElement('p');p.className='empty';p.textContent=text;parent.appendChild(p)}
-async function sources(){const list=await api('/api/sources');const previous=$('source').value;$('source').replaceChildren();const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent=list.length?'请选择已有运行':'未找到兼容的已有结果';$('source').appendChild(placeholder);for(const row of list){const option=document.createElement('option');option.value=row.path;option.textContent=row.label||row.scene||row.path;$('source').appendChild(option)}if(list.some(x=>x.path===previous))$('source').value=previous;$('sourcePath').textContent=$('source').value}
-function previewList(rows){const signature=JSON.stringify([selected,rows]);if(signature===previewSignature)return;previewSignature=signature;const parent=$('previews');parent.replaceChildren();if(!rows?.length){empty(parent,'尚无预览。渲染完成后会显示图片或报告链接。');return}for(const row of rows){const figure=document.createElement('figure'),link=document.createElement('a');link.href=artifactURL(row.path);link.target='_blank';link.rel='noopener';if(/\.(png|jpe?g)$/i.test(row.path)){const image=document.createElement('img');image.src=link.href;image.alt=row.label||'场景预览';image.loading='lazy';link.appendChild(image)}else{link.textContent='打开报告 / 下载产物';link.style.padding='14px';link.style.display='block'}const caption=document.createElement('figcaption');caption.textContent=row.label||row.path;figure.append(link,caption);parent.appendChild(figure)}}
-function reviewPanel(status){
-const score=status.score,issues=Array.isArray(status.issues)?status.issues:[],validScore=Number.isFinite(score)&&score>=0&&score<=10;
-$('reviewScore').textContent=validScore?score.toFixed(1)+' / 10':'—';
-$('reviewSummary').textContent=validScore?'本轮独立评审结果；是否通过同时取决于问题清单和覆盖情况。':(issues.some(x=>x.priority==='support')?'以下包含几何 / 支撑检查发现；尚未完成独立视觉评审。':'尚未完成独立视觉评审。');
-const list=$('reviewIssues');list.replaceChildren();
-const names={support:'几何 / 支撑',lighting:'灯光',large_appearance:'大件外观',small_details:'小配件',evidence:'证据不足'};
-for(const issue of issues){const item=document.createElement('li'),label=document.createElement('strong'),detail=document.createElement('p');label.textContent=(names[issue.priority]||issue.priority||'待核实')+' · '+(Array.isArray(issue.object_ids)&&issue.object_ids.length?issue.object_ids.join(', '):'场景整体');detail.textContent=issue.defect||'报告未给出具体描述';item.append(label,detail);list.appendChild(item)}
-if(validScore&&!issues.length){const item=document.createElement('li');item.textContent='本轮报告未列出问题；是否通过以质量状态为准。';list.appendChild(item)}
+async function sources(){const list=await api('/api/sources');const previous=$('source').value;$('source').replaceChildren();const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent=list.length?"Choose a saved result":"No compatible saved results found";$('source').appendChild(placeholder);for(const row of list){const option=document.createElement('option');option.value=row.path;option.textContent=row.label||row.scene||row.path;$('source').appendChild(option)}if(list.some(x=>x.path===previous))$('source').value=previous;$('sourcePath').textContent=$('source').value}
+async function scans(){
+scanRows=await api('/api/scans');const previous=$('scan').value;$('scan').replaceChildren();
+const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent=scanRows.length?"Choose a scan":"No scan archives in data/raw";$('scan').appendChild(placeholder);
+for(const row of scanRows){const option=document.createElement('option');option.value=row.path;option.textContent=row.label||row.path;$('scan').appendChild(option)}
+if(scanRows.some(row=>row.path===previous))$('scan').value=previous;$('scanPath').textContent=$('scan').value;
 }
-function paint(status){reviewPanel(status);$('runTitle').textContent=status.room_id||'场景任务';$('runId').textContent=status.run_id;$('execution').textContent=executionNames[status.execution_status]||status.execution_status;$('quality').textContent=qualityNames[status.quality_status]||status.quality_status||'尚未评审';$('current').textContent=(status.round??0)+' / '+(nodeNames[status.current_node]||status.current_node||status.next_nodes?.join(', ')||'—');$('repairState').textContent=status.repair_termination?'修复终止原因：'+status.repair_termination:'';$('runError').textContent=status.error?(typeof status.error==='string'?status.error:((status.error.node?status.error.node+'：':'')+(status.error.message||JSON.stringify(status.error)))):'';const running=status.execution_status==='running';const waiting=status.execution_status==='waiting_for_input';$('continue').disabled=actionBusy||running||waiting||['completed','cancelled'].includes(status.execution_status);$('repair').disabled=actionBusy||!waiting||status.quality_status==='passed'||status.can_repair===false||(Array.isArray(status.allowed_actions)&&!status.allowed_actions.includes('repair'))||status.operation!=='saved_scene_review';$('finish').disabled=actionBusy||!waiting||(Array.isArray(status.allowed_actions)&&!status.allowed_actions.includes('finish'));$('download').hidden=running;$('download').href='/return?run_id='+encodeURIComponent(selected);const stages=$('stages');stages.replaceChildren();for(const stage of status.stages||[]){const card=document.createElement('div');card.className='stage '+(['running','completed','failed','skipped'].includes(stage.status)?stage.status:'');const name=document.createElement('b');name.textContent=nodeNames[stage.node]||stage.node;const value=document.createElement('span');value.textContent=({running:'执行中',completed:'完成',failed:'失败',pending:'等待',skipped:'跳过',waiting_for_input:'等待操作'})[stage.status]||stage.status||'等待';if(Number.isFinite(stage.seconds))value.textContent+=' · '+stage.seconds.toFixed(1)+' 秒';card.append(name,value);stages.appendChild(card)}if(!stages.children.length)empty(stages,'任务尚未开始。');previewList([...(status.previews||[]),...(status.exports||[])])}
-async function refresh(){if(refreshing)return;refreshing=true;try{const list=await api('/api/runs');$('runs').replaceChildren();if(!list.length)empty($('runs'),'暂无任务');for(const row of [...list].reverse()){const button=document.createElement('button');button.className='run'+(row.run_id===selected?' selected':'');button.textContent=row.room_id+' · '+(executionNames[row.execution_status]||row.execution_status);const small=document.createElement('small');small.textContent=row.run_id.slice(0,12)+' · '+(qualityNames[row.quality_status]||row.quality_status||'');button.appendChild(small);button.onclick=()=>{selected=row.run_id;refresh()};$('runs').appendChild(button)}if(selected){const id=selected;const [status,eventRows,log]=await Promise.all([api('/api/runs/'+encodeURIComponent(id)),api('/api/runs/'+encodeURIComponent(id)+'/events?after=0'),fetch('/api/runs/'+encodeURIComponent(id)+'/log').then(async r=>{if(!r.ok)throw Error('无法读取日志');return r.text()})]);if(id!==selected)return;paint(status);const bottom=$('log').scrollHeight-$('log').scrollTop-$('log').clientHeight<40;$('log').textContent=log||'尚无终端输出。';if(bottom)$('log').scrollTop=$('log').scrollHeight;$('events').textContent=eventRows.slice(-50).map(e=>JSON.stringify(e)).join('\n')}}catch(e){notice(e.message,true)}finally{refreshing=false}}
-async function action(name){if(!selected||actionBusy)return;actionBusy=true;try{await api('/api/runs/'+encodeURIComponent(selected)+'/resume',{action:name});notice('请求已提交，任务状态会自动更新。')}catch(e){notice(e.message,true)}finally{actionBusy=false;await refresh()}}
-$('source').onchange=()=>{$('sourcePath').textContent=$('source').value};$('reloadSources').onclick=()=>sources().catch(e=>notice(e.message,true));$('continue').onclick=()=>action(null);$('repair').onclick=()=>action('repair');$('finish').onclick=()=>action('finish');$('create').onclick=async()=>{if(actionBusy)return;if(!$('source').value){notice('请先选择已有运行目录。',true);return}actionBusy=true;$('create').disabled=true;$('create').textContent='校验输入并创建中…';notice('正在核验已有场景及原始证据，文件较多时需要等待。');try{const row=await api('/api/runs',{source_run:$('source').value,max_batches:Number($('batches').value),repair_seconds:Number($('seconds').value)});selected=row.run_id;await api('/api/runs/'+encodeURIComponent(selected)+'/start',{});notice('任务已创建并开始。原始结果会保留。')}catch(e){notice(e.message,true)}finally{actionBusy=false;$('create').disabled=false;$('create').textContent='创建并开始';await refresh()}};
-(async()=>{try{token=(await api('/api/config')).token;await sources();await refresh();setInterval(refresh,2000)}catch(e){notice(e.message,true)}})();
+function selectRun(id){$('snapshotDialog').close();$('snapshotLarge').replaceChildren();resetConversation(id);$('workspace').hidden=true;for(const name of ['runMenu','progressDetails','reviewDetails','activityDetails','candidateDetails','logDetails'])$(name).open=false;selected=id;history.replaceState(null,'','#'+encodeURIComponent(id));currentStatus=null;for(const id of ['continue','repair','finish','cancelQueue'])$(id).disabled=true}
+function executionLabel(status){if(status.worker_finalizing)return 'Finalizing';if(status.operation==='full_scan'&&status.execution_status==='failed'&&!controls(status).queued&&status.review_progress?.status==='incomplete')return 'Review incomplete';if(['full_scan','scene_edit'].includes(status.operation)&&status.execution_status==='completed'&&status.quality_status==='not_passed')return 'Completed with issues';if(status.execution_status==='failed'&&status.operation==='full_scan'&&JSON.stringify(status.error||'').includes('needs_repair:'))return 'Needs repair';return executionNames[['queued','dispatching'].includes(status.queue_status)?status.queue_status:status.execution_status]||status.execution_status||'—'}
+function controls(status){
+const finalizing=status.worker_finalizing===true,queued=['queued','dispatching'].includes(status.queue_status)||['queued','dispatching'].includes(status.execution_status),waiting=status.execution_status==='waiting_for_input',scan=status.operation==='full_scan',review=['saved_scene_review','scene_edit'].includes(status.operation)||scan;
+const allowed=name=>Array.isArray(status.allowed_actions)?status.allowed_actions.includes(name):!scan;
+return {review,scan,queued,finalizing,repair:review&&waiting&&!queued&&!finalizing&&status.quality_status!=='passed'&&status.can_repair!==false&&allowed('repair'),finish:review&&waiting&&!queued&&!finalizing&&allowed('finish'),resume:!queued&&!finalizing&&['created','interrupted','failed'].includes(status.execution_status),cancel:(status.queue_status||status.execution_status)==='queued'};
+}
+function guidanceText(status){
+if(status.operation==='scene_edit'&&status.execution_status==='completed'&&status.whole_room_review==='not_repeated')return (status.edit_status==='passed'?'Edit accepted. ':'Edit not accepted. ')+ 'The whole room was not re-reviewed. Baseline quality findings are retained below. Editing again creates a separate version.';
+if(status.operation==='scene_edit'&&status.execution_status==='completed'&&status.edit_status==='change_verified')return 'The saved review confirms the requested change. Edit scope was not separately certified by this older review. Whole-room findings remain unchanged; no rerun is needed.';
+if(status.operation==='scene_edit'&&!status.worker_finalizing)return status.execution_status==='completed'?'Version saved. Choose Edit this version for a new change, or open any earlier version. Quality findings remain visible.':status.execution_status==='failed'?'Saved changes and completed review groups are retained. Resume retries the unfinished stage without repeating the edit.':'Creating a separate version. The parent scene is preserved; reconstruction does not run.';
+if(status.worker_finalizing)return 'Finishing logs and diagnostics. Your result is saved. Decision buttons will become available automatically.';
+if(status.operation==='full_scan'&&status.execution_status==='failed'&&!controls(status).queued&&status.review_progress?.status==='incomplete')return 'Review incomplete. Saved groups are retained. Resume continues the unfinished groups; quality requirements remain unchanged. This interruption is not a quality rejection.';
+if(status.operation==='full_scan'&&status.execution_status==='failed'&&JSON.stringify(status.error||'').includes('needs_repair:'))return 'Author stopped before acceptance. Inspect draft outputs and download diagnostics before resuming. Resume keeps saved edits and rechecks the scene before continuing repair.';
+const c=controls(status);
+if(c.queued)return status.queue_status==='dispatching'||status.execution_status==='dispatching'?"Preparing to run. This task can no longer be removed from the queue.":"Queued"+(Number.isInteger(status.queue_position)?" (position "+status.queue_position+")":'')+". Tasks run one at a time. You can cancel a waiting task; closing this page does not cancel it.";
+if(status.prepare_only&&status.execution_status==='running')return 'Checking and preparing the scan. No models are being called.';
+if(status.completion_reason==='prepared_only')return 'Scan check complete. No reconstruction or visual review was performed. Use New task to start full reconstruction.';
+if(status.execution_status==='running')return c.review?"Work is in progress. Wait for the independent review before choosing a repair.":"Reconstruction is running. Follow the stages and logs below.";
+if(['completed','cancelled'].includes(status.execution_status)){
+const quality=status.quality_status==='passed'?"Quality passed. ":status.quality_status==='not_passed'?"Quality not passed. Finishing a run does not mean quality passed. ":"Quality has not been confirmed. ";
+if(c.scan&&status.quality_status==='not_passed')return 'This run has ended. '+quality+completionReasonText(status.completion_reason)+' Saved candidates and reports remain in Diagnostics. Use New task to start another run.';
+return "This run has ended. "+quality+(c.review&&!c.scan?"Ended runs cannot be edited. Use New task to start a new review from a saved result.":"Inspect the outputs and logs. Use New task to start another scan run.");
+}
+if(status.execution_status==='waiting_for_input'&&c.scan)return c.repair?'Review complete. Inspect the findings and Diagnostics, then choose Repair one batch or Finish with issues. Each repair needs your action; at most three batches are available.':c.finish?'Review complete. Repair is unavailable. Inspect the findings and Diagnostics, then choose Finish with issues.':'Waiting for an available action from the server. Inspect the findings and Diagnostics.';
+if(status.execution_status==='waiting_for_input')return c.repair?"Review complete. Inspect the findings, then choose Repair & review or Finish without changes.":c.review?"Review complete. Repair is unavailable for this run. Inspect the quality and reason, then finish or create a new review.":"The scan workflow needs attention. Check the logs; manual repair controls do not apply to this workflow.";
+if(status.queue_status==='cancelled'&&status.execution_status==='created')return "Queue entry cancelled. Select Start to queue it again.";
+if(status.execution_status==='created')return "Task created. Select Start to add it to the queue.";
+if(['failed','interrupted'].includes(status.execution_status))return "Execution stopped. Check the error and logs, resolve the cause, then select Resume. Model calls will not restart automatically.";
+return "Waiting for a status update.";
+}
+function outputRound(row){const match=row.path.match(/\/r(\d+)_(?:build|render)\//);return match?Number(match[1]):null}
+function groupOutputs(rows){const groups=new Map(),seen=new Set();const order=['prepare','preflight','ingest','reconstruct','seed','author','publish','export_check'];for(const row of rows){if(seen.has(row.path))continue;seen.add(row.path);const round=outputRound(row),stage=row.stage||null,key=stage||round;if(!groups.has(key))groups.set(key,{round,stage,rows:[]});groups.get(key).rows.push(row)}return [...groups.values()].sort((a,b)=>a.stage||b.stage?order.indexOf(b.stage)-order.indexOf(a.stage):(b.round??-1)-(a.round??-1))}
+function outputAction(row){if(/\.portable\.blend$/i.test(row.path))return 'Blender';if(/\.glb$/i.test(row.path))return 'GLB';return 'Open report'}
+function versionLabel(round){return round===null?'Outputs':round===0?'Before repair · Round 0':'After repair '+round+' · Round '+round}
+const previewPositions=new Map();
+let previewClipId=0;
+function makePreviewViewer(items,key,labels=null){
+const viewer=document.createElement('div');viewer.className='preview-viewer';
+if(!items.length){empty(viewer,'Matched camera views will appear after rendering.');return viewer;}
+let index=Math.max(0,items.findIndex(row=>row.path===previewPositions.get(key)));
+const pair=document.createElement('div');pair.className='preview-pair';
+const panes=['captured','rendered'].map(kind=>{
+const pane=document.createElement('div'),label=document.createElement('p'),frame=document.createElement('div'),link=document.createElement('a'),error=document.createElement('p');
+const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'),image=document.createElementNS('http://www.w3.org/2000/svg','image');
+const defs=document.createElementNS('http://www.w3.org/2000/svg','defs'),clip=document.createElementNS('http://www.w3.org/2000/svg','clipPath'),rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+const clipId='preview-crop-'+(++previewClipId);clip.setAttribute('id',clipId);clip.setAttribute('clipPathUnits','userSpaceOnUse');clip.appendChild(rect);defs.appendChild(clip);svg.appendChild(defs);image.setAttribute('clip-path','url(#'+clipId+')');
+label.textContent=labels?(kind==='captured'?labels[0]:labels[1]):kind==='captured'?'Captured':'Rendered';label.className='preview-label';frame.className='preview-frame';
+link.className='preview-original';link.target='_blank';link.rel='noopener';link.ariaLabel='Open original camera comparison';
+svg.setAttribute('preserveAspectRatio','xMidYMid meet');svg.setAttribute('role','img');svg.setAttribute('aria-label',label.textContent);
+error.className='preview-error';error.textContent='Preview unavailable';error.hidden=true;
+image.onerror=()=>{svg.hidden=true;error.hidden=false;};
+svg.appendChild(image);link.appendChild(svg);frame.append(link,error);pane.append(label,frame);pair.appendChild(pane);
+return {kind,svg,image,link,error,frame,rect};
+});
+const controls=document.createElement('div'),previous=document.createElement('button'),counter=document.createElement('span'),next=document.createElement('button');
+controls.className='preview-navigation';previous.className='preview-prev';next.className='preview-next';counter.className='preview-count';counter.ariaLive='polite';
+previous.type=next.type='button';previous.textContent='‹';next.textContent='›';previous.ariaLabel='Previous view';next.ariaLabel='Next view';
+function render(){const row=items[index];
+const ratio=Math.max(row.captured[2]/row.captured[3],row.rendered[2]/row.rendered[3]);
+viewer.style.maxWidth='calc(var(--preview-height) * '+ratio+' * var(--preview-columns) + 2px)';
+for(const pane of panes){
+pane.link.href=artifactURL(pane.kind==='captured'&&row.before_path?row.before_path:row.path,row.run_id||selected);pane.svg.hidden=false;pane.error.hidden=true;
+const box=row[pane.kind];pane.frame.style.aspectRatio=box[2]+' / '+box[3];
+['x','y','width','height'].forEach((key,i)=>pane.rect.setAttribute(key,box[i]));
+pane.svg.setAttribute('viewBox',row[pane.kind].join(' '));pane.image.setAttribute('href',pane.link.href);pane.image.setAttribute('width',row.width);pane.image.setAttribute('height',row.height);
+}
+counter.textContent=(index+1)+' / '+items.length;previous.disabled=index===0;next.disabled=index===items.length-1;
+previewPositions.set(key,row.path);if(previewPositions.size>256)previewPositions.delete(previewPositions.keys().next().value);
+}
+previous.onclick=()=>{index=Math.max(0,index-1);render();};next.onclick=()=>{index=Math.min(items.length-1,index+1);render();};
+controls.append(previous,counter,next);viewer.append(pair,controls);render();return viewer;
+}
+const presentations=new Map();
+function canEdit(status){const c=controls(status);return status.execution_status==='completed'&&!c.finalizing&&!c.queued&&['full_scan','saved_scene_review','scene_edit'].includes(status.operation)&&(status.operation!=='full_scan'||status.technical_export_verified===true);}
+function placeEdit(status){const holder=$('resultActions');if($('editVersion').parentNode!==holder)holder.appendChild($('editVersion'));$('editVersion').hidden=!canEdit(status);}
+function downloadableFiles(rows){return (rows||[]).filter(row=>!/\.blend$/i.test(row.path)||/\.portable\.blend$/i.test(row.path)).sort((a,b)=>Number(!/\.portable\.blend$/i.test(a.path))-Number(!/\.portable\.blend$/i.test(b.path)))}
+function outputLinks(holder,rows,detail=false){for(const row of downloadableFiles(rows)){const link=document.createElement('a');link.href=artifactURL(row.path,row.run_id||selected);link.rel='noopener';link.title=row.path.split('/').pop();link.textContent=detail?row.path:outputAction(row);link.className=detail?'other-file':'button';if(/\.(blend|glb)$/i.test(row.path))link.download=row.path.split('/').pop();else link.target='_blank';holder.appendChild(link);}}
+function drawViews(holder,data,key){const views=data.comparisons?.[0];
+if(data.changes?.length){holder.appendChild(makePreviewViewer(data.changes,key+':changes',['Before','After']));if(views?.pairs?.length){const more=document.createElement('details'),title=document.createElement('summary');title.textContent='Captured / Rendered';more.append(title,makePreviewViewer(views.pairs,key+':camera-views'));holder.appendChild(more);}return true;}
+if(views?.pairs?.length){holder.appendChild(makePreviewViewer(views.pairs,key+':camera-views'));return true;}return false;
+}
+function previewList(unused,status={}){
+placeEdit(status);
+syncFiles();$('expandSnapshot').hidden=!(presentations.get(selected)?.changes?.length||presentations.get(selected)?.comparisons?.[0]?.pairs?.length);const index=presentations.get(selected),signature=JSON.stringify([selected,index,status.execution_status,status.quality_status,canEdit(status)]);
+if(signature===previewSignature)return;previewSignature=signature;
+const parent=$('previews'),candidates=$('candidatePreviews');parent.replaceChildren();candidates.replaceChildren();$('resultDownloadLinks').replaceChildren();
+$('resultDownloads').hidden=true;$('candidateDetails').hidden=true;
+if(!index){empty(parent,'Loading room previews…');return;}
+if(index.error){empty(parent,index.error);return;}
+if(!drawViews(parent,index,selected+':results'))empty(parent,index.files?.length?'Blender / GLB files are available. No matching snapshot is available for this result.':'Snapshots appear here after their stage passes. Saved candidates are in More details.');
+outputLinks($('resultDownloadLinks'),index.files);$('resultDownloads').hidden=!downloadableFiles(index.files).length;
+const draft=index.diagnostics||{},hasViews=drawViews(candidates,draft,selected+':candidates');
+if(downloadableFiles(draft.files).length){const heading=document.createElement('h3');heading.textContent='Saved attempt files';candidates.appendChild(heading);const links=document.createElement('div');links.className='actions';outputLinks(links,draft.files);candidates.appendChild(links);}
+$('candidateDetails').hidden=!(hasViews||downloadableFiles(draft.files).length);
+}
+function editOutcomeText(status){
+const labels={passed:'Edit passed',not_passed:'Edit not passed',change_verified:'Change verified · legacy review',unreviewed:'Edit not reviewed'};
+return labels[status.edit_status]||'Edit not reviewed';
+}
+function reviewPanel(status){
+
+const progress=status.operation==='full_scan'?status.review_progress:null,partial=progress&&progress.status!=='complete';
+$('reviewProgress').hidden=!progress;
+$('reviewProgress').textContent=progress?progress.completed_groups+' / '+progress.total_groups+' groups · '+progress.completed_objects+' / '+progress.total_objects+' objects reviewed'+(progress.current_group?' · Current group: '+progress.current_group:''):'';
+const scoped=status.operation==='scene_edit'&&status.whole_room_review==='not_repeated',baselineIssues=scoped&&Array.isArray(status.baseline_quality?.issues)?status.baseline_quality.issues:[];
+const score=scoped?status.edit_score:status.score,issues=[...(Array.isArray(status.issues)?status.issues:[]),...baselineIssues.map(x=>({...x,inherited:true}))],validScore=!partial&&Number.isFinite(score)&&score>=0&&score<=10;
+$('reviewScore').textContent=validScore?score.toFixed(1)+' / 10':'—';
+$('reviewBadge').textContent=partial?(progress.status==='incomplete'?'Review incomplete':'Review in progress'):issues.length?issues.length+' finding'+(issues.length===1?'':'s'):status.quality_status==='passed'?'Passed':(qualityNames[status.quality_status]||'Not reviewed');
+$('reviewSummary').textContent=validScore?"Independent review. Quality also depends on the findings and evidence coverage.":(issues.some(x=>x.priority==='support')?"Geometry / support findings. Independent visual review has not completed.":"Independent visual review has not completed.");
+if(scoped)$('reviewSummary').textContent='Score applies to this edit only. Baseline findings are historical and have not been re-reviewed.';
+if(partial)$('reviewSummary').textContent=progress.status==='incomplete'?'Review incomplete; this interruption is not a quality rejection. No overall score is available until all groups are reviewed.':'Independent review is in progress. No overall score is available until all groups are reviewed.';
+if(status.review_stream_error_count>0)$('reviewSummary').textContent+=" This session recovered after "+status.review_stream_error_count+" error events. See the review log for details.";
+const list=$('reviewIssues');list.replaceChildren();
+const names={support:"Geometry / support",lighting:"Lighting",large_appearance:"Major objects",small_details:"Small details",evidence:"Evidence needed"};
+for(const issue of issues){const item=document.createElement('li'),label=document.createElement('strong'),detail=document.createElement('p');const objects=issue.objects||issue.object_ids,kind=({evidence:"Evidence needed",geometry:"Geometry / support",appearance:"Appearance"})[issue.kind];label.textContent=(issue.inherited?'Baseline · ':'')+(kind?kind+(issue.priority?' · '+issue.priority:''):(names[issue.priority]||issue.priority||"Unverified"))+' · '+(Array.isArray(objects)&&objects.length?objects.join(', '):"Whole scene");detail.textContent=issue.detail||issue.defect||"No description supplied by the report.";item.append(label,detail);list.appendChild(item)}
+if(validScore&&!issues.length){const item=document.createElement('li');item.textContent="No issues listed. Check the quality status for the outcome.";list.appendChild(item)}
+}
+function repairStatusText(status){
+if(['repair','author_repair'].includes(status.current_node)&&status.execution_status==='running')return "Repair in progress";
+const labels={step_budget:"Repair step limit reached; saved changes were retained for review",not_started:"No repair started",completed:"Repair completed",timeout:"Repair timed out; saved changes will be reviewed",interrupted:"Repair interrupted; saved changes will be reviewed",execution_error:"Repair execution error"};
+return labels[status.repair_termination]||("Repair status: "+(status.repair_termination||"Not started"));
+}
+function completionReasonText(reason){
+const labels={review_completed:'Independent review completed. Scene unchanged; no automatic repair.',edit_accepted:'Edit accepted; whole-room quality was not re-reviewed.',edit_not_accepted:'Version saved; edit acceptance did not pass. No automatic repair was started.',edit_review_not_passed:'Version saved; independent quality checks did not pass. No automatic repair was started.',final_publish_not_passed:"Ended: final publish quality checks did not pass. Saved drafts remain available; no additional repair batch will start.",prepared_only:"Scan validated and prepared. No models were called.",pipeline_completed:"Pipeline completed. Human quality review is still required.",pipeline_completed_human_review_pending:"Pipeline completed. Human quality review is still required.",user_finished:"Ended by your choice.",quality_passed:"Ended: quality passed.",repair_budget_exhausted:"Ended: repair budget exhausted; maximum repairs reached. Quality requirements remain unchanged.",no_progress:"Ended: no measurable improvement from the repair. Saved candidates are retained; quality requirements remain unchanged.",evidence_insufficient:"Ended: evidence is insufficient to confirm quality. More usable views or evidence are needed.",no_actionable_issues:"Ended: no actionable issues. More evidence is needed.",repair_timeout:"Review completed after a repair timeout.",repair_interrupted:"Review completed after an interrupted repair.",repair_execution_error:"Review completed after a repair error.",legacy_unspecified:"End reason was not recorded by the older version."};
+return labels[reason]||(reason?"End reason: "+reason:'');
+}
+function paint(status){const snapshotStatus=status.current_result_status||status;$('editOutcome').hidden=snapshotStatus.operation!=='scene_edit';$('editOutcome').textContent=editOutcomeText(snapshotStatus);if(queueNoticeRun===status.run_id&&!controls(status).queued&&status.execution_status!=='created')notice('');currentStatus=status;$('emptyWorkspace').hidden=true;$('workspace').hidden=false;$('summaryContent').hidden=false;$('summaryEmpty').hidden=true;reviewPanel(status);const c=controls(status);placeEdit(status);$('runTitle').textContent=status.room_id||"Scene task";$('execution').textContent=executionLabel(status);$('changeRequest').hidden=status.operation!=='scene_edit';$('changeRequest').textContent=status.instruction||'';$('quality').textContent=status.operation==='full_scan'&&status.review_progress?.status==='incomplete'?'Review incomplete':qualityNames[status.quality_status]||status.quality_status||"Not reviewed";$('current').textContent=(c.review&&status.operation!=='scene_edit'?'Round '+(status.round??0)+' / ':'')+(nodeNames[status.current_node]||status.current_node||status.next_nodes?.join(', ')||'—');$('guidance').textContent=guidanceText(status);$('reviewCard').hidden=!c.review;$('repairState').hidden=!c.review||status.operation==='scene_edit';$('repairState').textContent=repairStatusText(status);$('completionState').textContent=completionReasonText(status.completion_reason);const error=status.error?(typeof status.error==='string'?status.error:((status.error.node?status.error.node+': ':'')+(status.error.message||JSON.stringify(status.error)))):'';$('technicalError').textContent=error;$('errorDetails').hidden=!error;$('runError').textContent=error?(error.split('\n')[0]+(/request timed out/i.test(error)?' · Codex connection timed out.':'')):'';$('actionFeedback').textContent=actionMessages.get(status.run_id)||'';
+$('continue').hidden=['waiting_for_input','completed'].includes(status.execution_status);$('continue').disabled=actionBusy||!connected||!c.resume;$('continue').textContent=actionBusy?'Submitting…':status.execution_status==='created'?'Start':'Resume';$('repair').textContent=c.scan?'Repair one batch':'Repair & review';$('finish').textContent=c.scan?'Finish with issues':'Finish without changes';$('repair').hidden=!c.review||status.execution_status!=='waiting_for_input';$('repair').disabled=actionBusy||!connected||!c.repair;$('finish').hidden=!c.review||status.execution_status!=='waiting_for_input';$('finish').disabled=actionBusy||!connected||!c.finish;$('cancelQueue').hidden=!c.queued;$('cancelQueue').disabled=actionBusy||!connected||!c.cancel;$('download').hidden=status.execution_status==='running'||c.queued||c.finalizing;$('download').href='/return?run_id='+encodeURIComponent(status.execution_run_id||selected);diagnosticsAvailable=!$('download').hidden;$('diagnostics').hidden=false;$('diagnostics').setAttribute('aria-disabled',String(!diagnosticsAvailable));$('diagnostics').href=diagnosticsAvailable?'/diagnostics?run_id='+encodeURIComponent(selected):'';$('diagnostics').tabIndex=diagnosticsAvailable?0:-1;$('diagnosticsHint').hidden=diagnosticsAvailable;$('diagnosticsHint').textContent=c.finalizing?'Saving logs… Download available shortly.':'Available after the current operation stops.';
+syncFiles();
+const currentNode=nodeNames[status.current_node]||status.current_node||nodeNames[status.next_nodes?.[0]]||status.next_nodes?.[0]||'Preparing';
+$('stepSummary').textContent=c.finalizing?'Saving logs and diagnostics…':c.queued?executionLabel(status):status.execution_status==='completed'?(status.quality_status==='passed'?'Quality checks passed.':'Run finished. See Review findings for the outcome.'):status.execution_status==='waiting_for_input'?'Your decision':currentNode+(status.execution_status==='failed'?' · Failed':'');
+$('actionPanel').hidden=!(c.resume||c.queued||status.execution_status==='waiting_for_input'||status.execution_status==='failed'||status.execution_status==='interrupted');
+$('nextStep').textContent=$('actionPanel').hidden?'':guidanceText(status);
+paintSessionOperation();$('conversationTaskState').textContent=executionLabel(status)+(status.execution_status==='running'?' · '+currentNode:'');$('showTaskActions').hidden=$('actionPanel').hidden;$('showTaskActions').textContent=status.execution_status==='waiting_for_input'?'Your decision →':'View actions →';
+const stages=$('stages');stages.replaceChildren();for(const stage of status.stages||[]){const card=document.createElement('div');card.className='stage '+(['running','completed','failed','skipped'].includes(stage.status)?stage.status:'');const name=document.createElement('b');name.textContent=nodeNames[stage.node]||stage.node;const value=document.createElement('span');value.textContent=({running:"Running",completed:"Complete",failed:"Failed",pending:"Pending",skipped:"Skipped",waiting_for_input:"Your decision"})[stage.status]||stage.status||"Pending";value.title=value.textContent;name.title=name.textContent;const elapsed=document.createElement('small');elapsed.textContent=Number.isFinite(stage.seconds)?stage.seconds.toFixed(1)+' s':'—';card.append(name,value,elapsed);stages.appendChild(card)}if(!stages.children.length)empty(stages,"This task has not started.");previewList([...(status.previews||[]),...(status.exports||[])],status)}
+// Read recorded lifecycle times, not UUID order, click time, or stage-log updates.
+async function orderWorkspace(rows){
+const pending=[...rows];
+async function worker(){while(pending.length){
+const row=pending.shift(),old=runActivity.get(row.run_id)||{cursor:0,time:0,kind:'',checked:0};
+const signature=JSON.stringify([row.execution_status,row.queue_status,row.round]);
+const active=['running','queued','dispatching','created'].includes(row.execution_status)||['queued','dispatching'].includes(row.queue_status);
+if(!active&&old.signature===signature&&Date.now()-old.checked<15000)continue;
+try{
+const events=await api('/api/runs/'+encodeURIComponent(row.run_id)+'/events?after='+old.cursor);
+if(!Array.isArray(events))throw Error('Invalid event list');
+let next={...old,signature,checked:Date.now()};
+for(const event of events){
+if(Number.isInteger(event.seq))next.cursor=Math.max(next.cursor,event.seq);
+if(['run_created','run_started'].includes(event.kind)){
+const time=Date.parse(event.time);if(Number.isFinite(time)&&time>=next.time){next.time=time;next.kind=event.kind;}
+}}
+runActivity.set(row.run_id,next);
+}catch{ /* Keep the last verified order; retry when the connection recovers. */ }
+}}
+await Promise.all(Array.from({length:Math.min(4,rows.length)},worker));
+return [...rows].sort((a,b)=>(runActivity.get(b.run_id)?.time||0)-(runActivity.get(a.run_id)?.time||0)||a.run_id.localeCompare(b.run_id));
+}
+function activityLabel(id){
+const activity=runActivity.get(id);
+if(!activity?.time)return 'Time unavailable';
+return (activity.kind==='run_started'?'Started ':'Created ')+new Date(activity.time).toLocaleString('en-GB',{month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+async function refresh(){if(refreshing)return;refreshing=true;try{const list=await orderWorkspace(await api('/api/runs'));if(!selected&&list.length)selectRun(list[0].run_id);$('queueSummary').textContent=list.filter(r=>['queued','dispatching'].includes(r.queue_status)).length+' waiting';$('runs').replaceChildren();if(!list.length)empty($('runs'),"No tasks yet. Select New task to begin.");for(const row of list){const button=document.createElement('button');button.className='run'+(row.run_id===selected?' selected':'');button.textContent=row.room_id+' · '+executionLabel(row);const small=document.createElement('small');small.textContent=activityLabel(row.run_id);button.appendChild(small);button.onclick=()=>{selectRun(row.run_id);refresh()};$('runs').appendChild(button)}if(selected){const id=selected;const status=await api('/api/runs/'+encodeURIComponent(id));if(id!==selected)return;paint(status);loadConversation();const executionId=status.execution_run_id||id;const parts=await Promise.allSettled([api('/api/runs/'+encodeURIComponent(executionId)+'/events?after=0'),request('/api/runs/'+encodeURIComponent(executionId)+'/log').then(async r=>{if(!r.ok)throw Error('Unable to read the log.');return r.text()})]);if(id!==selected)return;
+try{const data=await api('/api/runs/'+encodeURIComponent(id)+'/presentation');if(id!==selected)return;if(!Array.isArray(data.comparisons))throw Error('Presentation endpoint unavailable. Restart using this version’s start_server.sh.');presentations.set(id,data);previewList([],status);}catch(e){if(id===selected){presentations.set(id,{error:'Previews unavailable: '+e.message});previewList([],status);}}
+if(parts[1].status==='fulfilled'){const log=parts[1].value;const bottom=$('log').scrollHeight-$('log').scrollTop-$('log').clientHeight<40;$('log').textContent=log||'No log output yet.';if(bottom)$('log').scrollTop=$('log').scrollHeight}else $('log').textContent='Log unavailable. Task status above was fetched separately.';
+if(parts[0].status==='fulfilled')$('events').textContent=parts[0].value.slice(-50).map(e=>JSON.stringify(e)).join('\n');}}catch(e){notice(e.message,true)}finally{refreshing=false}}
+function setBusy(busy){actionBusy=busy;for(const id of ['create','rebuildScan','createEdit'])$(id).disabled=busy;if(currentStatus)paint(currentStatus)}
+async function action(name){if(!selected||actionBusy)return;const id=selected;actionMessages.set(id,'Submitting request…');setBusy(true);try{token=(await api('/api/config')).token;const reply=await api('/api/runs/'+encodeURIComponent(id)+'/resume',{action:name},20);actionMessages.set(id,'Request accepted · '+(reply.queue_status||'queued')+(reply.queue_position?' · position '+reply.queue_position:''));if(selected===id&&currentStatus)paint({...currentStatus,...reply});notice('Request accepted. The task status below tracks execution.')}catch(e){actionMessages.set(id,e.message);notice(e.message,true)}finally{setBusy(false);await refresh()}}
+for(const [menu,trigger] of [['runMenu','moreActions']]){
+$(menu).onkeydown=event=>{if(event.key==='Escape'&&$(menu).open){event.preventDefault();$(menu).open=false;$(trigger).focus();}};
+}
+// Files is an inline disclosure, not a dismiss-on-click popup.
+$('source').onchange=()=>{$('sourcePath').textContent=$('source').value};$('reloadSources').onclick=()=>sources().catch(e=>notice(e.message,true));
+$('allowRepair').onchange=()=>{$('maxChanges').disabled=!$('allowRepair').checked;$('seconds').disabled=!$('allowRepair').checked};
+$('scan').onchange=()=>{$('scanPath').textContent=$('scan').value;const row=scanRows.find(row=>row.path===$('scan').value);$('scene').value=row?.scene||''};$('reloadScans').onclick=()=>scans().catch(e=>notice(e.message,true));
+$('continue').onclick=()=>action(null);$('repair').onclick=()=>action('repair');$('finish').onclick=()=>action('finish');
+$('cancelQueue').onclick=async()=>{if(!selected||actionBusy)return;setBusy(true);try{await api('/api/runs/'+encodeURIComponent(selected)+'/cancel-queue',{});notice("Waiting queue entry cancelled.")}catch(e){notice(e.message,true)}finally{setBusy(false);await refresh()}};
+$('create').onclick=async()=>{
+if(actionBusy)return;if(!$('source').value){notice("Choose a saved result first.",true);return}
+const maxChanges=Number($('maxChanges').value),seconds=Number($('seconds').value),allow=$('allowRepair').checked;
+if(allow&&(!Number.isInteger(maxChanges)||maxChanges<1||maxChanges>3||!Number.isInteger(seconds)||seconds<120||seconds>1800)){notice("Maximum repairs must be an integer from 1–3; time limit must be an integer from 120–1800 seconds.",true);return}
+setBusy(true);$('create').textContent="Creating…";notice("Validating the saved scene and evidence. Large inputs may take a moment.");
+try{const row=await api('/api/runs',{source_run:$('source').value,max_batches:allow?maxChanges:0,repair_seconds:allow?seconds:900});selectRun(row.run_id);$('newTask').close();await api('/api/runs/'+encodeURIComponent(selected)+'/start',{});notice("Task queued. Choose whether to repair after the review. Your original result is preserved.")}catch(e){notice(e.message,true)}finally{setBusy(false);$('create').textContent="Start review";await refresh()}};
+async function createFullRun(){
+if(actionBusy)return;const scan=$('scan').value,scene=$('scene').value.trim();if(!scan||!scene){notice("Choose a scan and enter a scene name.",true);return}
+setBusy(true);notice("Validating the scan and creating a separate task. Large archives may take a moment.");try{const row=await api('/api/full-runs',{scan_archive:scan,scene,prepare_only:false});selectRun(row.run_id);$('newTask').close();await api('/api/runs/'+encodeURIComponent(selected)+'/start',{});notice("Reconstruction queued. Input validation runs first.");queueNoticeRun=selected}catch(e){notice(e.message,true)}finally{setBusy(false);await refresh()}}
+$('rebuildScan').onclick=()=>createFullRun();
+$('newTaskButton').onclick=()=>{directEditParent=null;$('taskTitle').textContent='New task';$('taskType').value='review';$('reviewForm').hidden=false;$('scanForm').hidden=true;$('editForm').hidden=true;$('taskPicker').hidden=false;$('versionPicker').hidden=false;$('editingVersion').hidden=true;$('formNotice').textContent='';$('newTask').showModal()};
+$('emptyNewTask').onclick=$('newTaskButton').onclick;
+$('closeTask').onclick=()=>{directEditParent=null;$('newTask').close();};
+$('taskType').onchange=()=>{const kind=$('taskType').value;$('reviewForm').hidden=kind!=='review';$('scanForm').hidden=kind!=='scan';$('editForm').hidden=kind!=='edit';$('formNotice').textContent='';if(kind==='edit')loadVersions().catch(e=>notice(e.message,true))};
+let versionRows=[];
+async function loadVersions(preferred){
+versionRows=await api('/api/versions');const prior=preferred||$('version').value;
+$('version').replaceChildren();const blank=document.createElement('option');blank.value='';blank.textContent='Choose a completed version';$('version').appendChild(blank);
+for(const row of versionRows){const option=document.createElement('option');option.value=row.run_id;option.textContent=row.room_id+' · '+row.run_id.slice(0,12)+(row.instruction?' · '+row.instruction.slice(0,60):'');$('version').appendChild(option)}
+if(versionRows.some(r=>r.run_id===prior))$('version').value=prior;versionInfo();
+}
+function versionInfo(){const row=versionRows.find(r=>r.run_id===$('version').value);$('versionInfo').textContent=row?(qualityNames[row.quality_status]||'Not reviewed')+(row.parent_run_id?' · Parent '+row.parent_run_id.slice(0,12):' · Original task'):'';}
+$('version').onchange=versionInfo;
+$('editVersion').onclick=async()=>{
+if(!currentStatus||currentStatus.run_id!==selected||!canEdit(currentStatus)||actionBusy||!connected)return;
+if(currentStatus.session){$('chatInput').focus();$('chatNotice').textContent='Describe the change here. I will draft a plan for confirmation.';return;}
+directEditParent=selected;$('taskTitle').textContent='Edit this version';$('taskPicker').hidden=true;$('versionPicker').hidden=true;
+$('editingVersion').hidden=false;$('editingVersion').textContent=(currentStatus.room_id||'Scene')+' · '+directEditParent+' · '+(qualityNames[currentStatus.quality_status]||'Not reviewed');
+$('taskType').value='edit';$('reviewForm').hidden=true;$('scanForm').hidden=true;$('editForm').hidden=false;$('formNotice').textContent='';$('editInstruction').value='';$('newTask').showModal();$('editInstruction').focus();
+};
+$('openVersion').onclick=async()=>{if(!$('version').value)return;selectRun($('version').value);$('newTask').close();await refresh()};
+$('createEdit').onclick=async()=>{
+if(actionBusy)return;const parent=directEditParent||$('version').value,instruction=$('editInstruction').value.trim();
+if(!parent||instruction.length<3){notice('Choose a version and describe a specific change.',true);return}
+setBusy(true);try{token=(await api('/api/config')).token;const row=await api('/api/edit-runs',{parent_run_id:parent,instruction});selectRun(row.run_id);$('newTask').close();await api('/api/runs/'+encodeURIComponent(row.run_id)+'/start',{});notice('New version queued. Parent version preserved.')}catch(e){notice(e.message,true)}finally{setBusy(false);await refresh()}
+};
+let sidebarOpen=true,summaryOpen=true;
+let summaryPreferredWidth=null,summaryWidth=370,summaryDrag=null;
+function summaryBounds(){const viewport=Number(globalThis.innerWidth)||1400;const left=sidebarOpen?(viewport<=1250?190:218):0;return {viewport,min:300,max:Math.max(300,Math.min(900,viewport-left-420)),defaultWidth:viewport<=1250?330:370}}
+function applySummaryWidth(){
+const b=summaryBounds();summaryWidth=Math.round(Math.max(b.min,Math.min(b.max,summaryPreferredWidth??b.defaultWidth)));
+$('workspaceShell').style.setProperty('--summary-user-width',summaryWidth+'px');
+const h=$('summaryResize');h.hidden=!summaryOpen||b.viewport<=1100;h.setAttribute('aria-valuemin',b.min);h.setAttribute('aria-valuemax',b.max);h.setAttribute('aria-valuenow',summaryWidth);h.setAttribute('aria-valuetext',summaryWidth+' pixels');
+}
+function saveSummaryWidth(){try{if(summaryPreferredWidth===null)localStorage.removeItem('spatial-agent.summary-width');else localStorage.setItem('spatial-agent.summary-width',String(summaryPreferredWidth))}catch{}}
+function setSummaryWidth(value,persist=true){const n=Number(value),b=summaryBounds();summaryPreferredWidth=Number.isFinite(n)?Math.max(b.min,Math.min(b.max,n)):null;applySummaryWidth();if(persist)saveSummaryWidth()}
+function restoreSummaryWidth(){let n=null;try{const raw=localStorage.getItem('spatial-agent.summary-width');const parsed=Number(raw);if(raw!==null&&raw.trim()!==''&&Number.isFinite(parsed)&&parsed>=300&&parsed<=900)n=parsed}catch{}summaryPreferredWidth=n;applySummaryWidth()}
+function finishSummaryResize(event){if(!summaryDrag||(event&&event.pointerId!==summaryDrag.pointerId))return;const id=summaryDrag.pointerId;summaryDrag=null;$('summaryResize').className='';try{$('summaryResize').releasePointerCapture?.(id)}catch{}saveSummaryWidth()}
+function resetSummaryWidth(){finishSummaryResize();summaryPreferredWidth=null;applySummaryWidth();saveSummaryWidth()}
+$('summaryResize').onpointerdown=e=>{if(e.button!==0||!summaryOpen||summaryBounds().viewport<=1100)return;e.preventDefault();summaryDrag={pointerId:e.pointerId,x:e.clientX,width:summaryWidth};$('summaryResize').setPointerCapture?.(e.pointerId);$('summaryResize').className='dragging'};
+$('summaryResize').onpointermove=e=>{if(summaryDrag&&e.pointerId===summaryDrag.pointerId)setSummaryWidth(summaryDrag.width+summaryDrag.x-e.clientX,false)};
+$('summaryResize').onpointerup=finishSummaryResize;$('summaryResize').onpointercancel=finishSummaryResize;$('summaryResize').onlostpointercapture=finishSummaryResize;
+$('summaryResize').ondblclick=resetSummaryWidth;
+$('summaryResize').onkeydown=e=>{if(!summaryOpen||summaryBounds().viewport<=1100)return;const b=summaryBounds();if(e.key==='ArrowLeft')setSummaryWidth(summaryWidth+24);else if(e.key==='ArrowRight')setSummaryWidth(summaryWidth-24);else if(e.key==='Home')setSummaryWidth(b.min);else if(e.key==='End')setSummaryWidth(b.max);else if(e.key==='Enter')resetSummaryWidth();else return;e.preventDefault()};
+globalThis.addEventListener?.('resize',()=>{finishSummaryResize();applySummaryWidth()});
+
+function applyPanelLayout(){
+finishSummaryResize();applySummaryWidth();
+$('workspaceSidebar').hidden=!sidebarOpen;$('summaryPanel').hidden=!summaryOpen;
+$('workspaceShell').className='shell'+(!sidebarOpen?' sidebar-collapsed':'')+(!summaryOpen?' summary-collapsed':'');
+for(const [id,open,name] of [['sidebarToggle',sidebarOpen,'workspace'],['summaryToggle',summaryOpen,'summary']]){const b=$(id),label=(open?'Hide ':'Show ')+name;b.setAttribute('aria-expanded',String(open));b.setAttribute('aria-label',label);b.title=label}
+}
+function setSidebarOpen(open,persist=true){sidebarOpen=Boolean(open);applyPanelLayout();if(persist){try{localStorage.setItem('spatial-agent.sidebar-hidden',String(!sidebarOpen))}catch{}}}
+function setSummaryOpen(open,persist=true){summaryOpen=Boolean(open);applyPanelLayout();if(persist){try{localStorage.setItem('spatial-agent.summary-hidden',String(!summaryOpen))}catch{}}}
+function panelDefault(query){return typeof globalThis.matchMedia==='function'&&globalThis.matchMedia(query).matches}
+function restoreSidebar(){let hidden=panelDefault('(max-width:760px)');try{const v=localStorage.getItem('spatial-agent.sidebar-hidden');if(v!==null)hidden=v==='true'}catch{}setSidebarOpen(!hidden,false)}
+function restorePanels(){restoreSidebar();let hidden=panelDefault('(max-width:1100px)');try{const v=localStorage.getItem('spatial-agent.summary-hidden');if(v!==null)hidden=v==='true'}catch{}setSummaryOpen(!hidden,false)}
+$('sidebarToggle').onclick=()=>{if(!sidebarOpen&&panelDefault('(max-width:760px)'))setSummaryOpen(false,false);setSidebarOpen(!sidebarOpen)};
+$('summaryToggle').onclick=()=>{if(!summaryOpen&&panelDefault('(max-width:760px)'))setSidebarOpen(false,false);setSummaryOpen(!summaryOpen)};
+function revealSummary(){if(panelDefault('(max-width:760px)'))setSidebarOpen(false,false);setSummaryOpen(true)}
+$('expandSnapshot').onclick=()=>{const index=presentations.get(selected);if(!currentStatus||currentStatus.run_id!==selected||!index)return;$('snapshotLarge').replaceChildren();if(drawViews($('snapshotLarge'),index,selected+':expanded'))$('snapshotDialog').showModal()};
+$('closeEvidence').onclick=()=>$('evidenceDialog').close();
+$('evidenceDialog').onclick=e=>{if(e.target===$('evidenceDialog'))$('evidenceDialog').close()};
+$('closeSnapshot').onclick=()=>$('snapshotDialog').close();
+$('showTaskActions').onclick=()=>{revealSummary();$('actionPanel').scrollIntoView?.({block:'nearest'});const button=['continue','repair','finish','cancelQueue'].map($).find(e=>!e.hidden&&!e.disabled);button?.focus()};
+restorePanels();restoreSummaryWidth();
+let displayedPlanId=null,confirmBusy=false,sessionActionBusy=false;
+function sessionUnresolved(){const a=currentStatus?.session?.active;return Boolean(a&&!['passed','discarded','unchanged','needs_input','reviewed'].includes(a.outcome))}
+function syncConfirmPlan(){
+const turn=chatStates.get(selected)?.turns?.at(-1),plan=turn?.result?.plan;
+const existing=currentStatus?.session?.operations?.find(o=>o.plan_id===plan?.plan_id);
+const already=existing&&existing.submitted!==false||currentStatus?.session?.commands?.some(c=>c.plan_id===plan?.plan_id&&c.submitted);
+const resume=plan?.operation==='resume_operation';
+const blocked=sessionUnresolved()&&!resume&&!(existing&&existing.submitted===false);
+const eligible=Boolean(currentStatus?.run_id===selected&&currentStatus.session&&turn?.status==='completed'&&(turn?.facts?.editable===true||resume)&&plan?.plan_id&&plan.plan_id===displayedPlanId&&!already);
+$('confirmPlan').hidden=!eligible;$('confirmPlan').disabled=confirmBusy||chatSending.has(selected)||blocked||!connected;
+$('confirmHint').hidden=!eligible;$('confirmHint').textContent=blocked?'Resolve the current operation first. Ask for a fresh plan afterwards.':resume?'Resumes the same operation from saved checkpoints.':plan?.operation==='scene_review'?'Runs an independent review. No scene edits or automatic repairs.':'Runs one edit in this conversation. Current scene is preserved until acceptance passes.';
+}
+$('confirmPlan').onclick=async()=>{
+if(confirmBusy||$('confirmPlan').hidden||$('confirmPlan').disabled)return;
+const id=selected,state=chatStates.get(id),plan=state?.turns?.at(-1)?.result?.plan;
+if(!plan||plan.plan_id!==displayedPlanId)return;
+confirmBusy=true;syncConfirmPlan();
+try{const result=await api('/api/runs/'+encodeURIComponent(id)+'/confirm-plan',{plan_id:plan.plan_id,revision:state.revision},190);
+if(selected===id&&currentStatus?.run_id===id){currentStatus.session=result;paintSessionOperation();$('chatNotice').textContent='Operation confirmed in this conversation.'}}
+catch(e){if(selected===id)$('chatNotice').textContent=e.message}
+finally{confirmBusy=false;syncConfirmPlan()}
+};
+async function sessionAction(action){
+const id=selected,op=currentStatus?.session?.active;if(!op||sessionActionBusy||chatSending.has(id)||chatStates.get(id)?.turns?.at(-1)?.status==='planning')return;
+sessionActionBusy=true;paintSessionOperation();
+try{const result=await api('/api/runs/'+encodeURIComponent(id)+'/session-action',{operation_id:op.run_id,action},190);if(selected===id&&currentStatus?.run_id===id)currentStatus.session=result}
+catch(e){if(selected===id)$('chatNotice').textContent=e.message}
+finally{sessionActionBusy=false;paintSessionOperation();await refresh()}
+}
+$('sessionResume').onclick=()=>sessionAction('resume');$('sessionDiscard').onclick=()=>sessionAction('discard');$('sessionCancel').onclick=()=>sessionAction('cancel');
+function paintSessionOperation(){
+const session=currentStatus?.run_id===selected?currentStatus.session:null,a=session?.active;
+$('sessionOperation').hidden=!a;$('sessionHistory').hidden=!session?.operations?.length;
+const list=$('sessionHistoryItems');list.replaceChildren();
+for(const [i,op] of (session?.operations||[]).entries()){const row=document.createElement('p');row.textContent=(op.operation==='saved_scene_review'?'Review ':'Edit ')+(i+1)+' · '+op.change+' · '+(op.outcome==='pending'?(op.status?.execution_status||'Preparing'):op.outcome);list.appendChild(row);const link=document.createElement('a');link.textContent='Diagnostics';link.href='/diagnostics?run_id='+encodeURIComponent(op.run_id);if(!['running','queued','dispatching'].includes(op.status?.execution_status)&&!op.status?.worker_finalizing)list.appendChild(link)}
+if(a){const s=a.status||{},busy=Boolean(['running','queued','dispatching'].includes(s.execution_status)||s.worker_finalizing),resolved=['passed','discarded','unchanged','needs_input','reviewed'].includes(a.outcome);
+const label=s.review_stale?'Review is outdated · Source changed. Review again.':a.outcome==='reviewed'?'Review complete · '+(s.quality_status==='passed'?'Quality passed':s.quality_status==='not_passed'?'Quality not passed':'Quality unreviewed')+' · Scene unchanged':a.outcome==='needs_input'?'Your input is needed. Current result kept.':a.outcome==='unchanged'?'Already matches your request. No changes needed.':a.outcome==='passed'?'Edit passed · Current result updated':a.outcome==='discarded'?'Attempt retained · Current result kept':s.execution_status==='completed'?'Edit not accepted · Current result kept':s.execution_status==='failed'?'Execution failed · Saved checkpoints retained':s.execution_status==='interrupted'?'Interrupted · Resume from saved checkpoints':executionLabel(s)+(s.current_node?' · '+(nodeNames[s.current_node]||s.current_node):'');
+$('sessionOperationText').textContent=label;$('sessionOperationChange').textContent=a.outcome==='needs_input'?[s.gate_reason,...(s.clarification_questions||[])].filter(Boolean).join(' · '):a.change;
+$('sessionResume').textContent=a.operation==='saved_scene_review'?'Resume review':'Resume edit';$('sessionCancel').textContent='Cancel queued operation';
+$('sessionResume').hidden=resolved||busy||!['failed','interrupted','created'].includes(s.execution_status);$('sessionDiscard').hidden=resolved||busy;$('sessionCancel').hidden=resolved||s.queue_status!=='queued';
+for(const id of ['sessionResume','sessionDiscard','sessionCancel'])$(id).disabled=sessionActionBusy||!connected;
+if(!resolved){$('actionPanel').hidden=true;$('showTaskActions').hidden=true;}
+}
+syncConfirmPlan();
+}
+
+function showPlanSummary(plan,current=true){
+displayedPlanId=current?plan?.plan_id:null;syncConfirmPlan();
+if(!plan||plan.target_run_id!==selected){$('planSummary').hidden=true;return}
+$('planSummary').hidden=false;$('planLabel').textContent=current?'Awaiting confirmation':'Earlier draft · Not current';
+const card=$('planContent');card.replaceChildren();
+for(const [label,value] of [[plan.operation==='scene_review'?'Review':plan.operation==='resume_operation'?'Resume':'Change',plan.change],['Objects',plan.objects],['Keep',plan.preserve]]){if(value){chatLine(card,label,'chat-role');chatLine(card,Array.isArray(value)?value.join(' · '):value)}}
+const details=document.createElement('details'),label=document.createElement('summary');label.textContent='Plan details';details.appendChild(label);
+for(const [name,value] of [['Target version',plan.target_run_id],['Steps',plan.steps],['Outputs',plan.expected_outputs]]){if(value){chatLine(details,name,'chat-role');chatLine(details,Array.isArray(value)?value.join(' → '):value)}}
+if(plan.resources)chatLine(details,plan.resources,'muted');chatLine(details,plan.operation==='scene_review'?'The retained scene will be built and independently reviewed without editing.':plan.operation==='resume_operation'?'Continue the existing operation at its saved checkpoint; no new reconstruction is created.':'Objects and geometry will be checked during editing. Confirmation is required to start.','muted');card.appendChild(details);
+}
+let diagnosticsAvailable=false;
+$('diagnostics').onclick=e=>{if(!diagnosticsAvailable)e.preventDefault()};
+function syncFiles(){$('runMenu').hidden=!selected;if($('runMenu').hidden)$('runMenu').open=false}
+// Conversation is planning-only; it never invokes task creation or queue endpoints.
+const chatStates=new Map(),chatDrafts=new Map(),chatSending=new Set(),chatUnconfirmed=new Map();
+let chatLoading=false,chatComposing=false,chatSignature='';
+function chatLine(parent,text,className=''){const e=document.createElement('p');e.textContent=text;e.className=className;parent.appendChild(e);return e}
+function chatAgentLabel(parent){
+const label=document.createElement('div');label.className='chat-role chat-agent-label';
+const icon=document.createElement('span');icon.className='chat-agent-icon';icon.setAttribute('aria-hidden','true');
+const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+for(const [k,v] of Object.entries({viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':'1.8','stroke-linecap':'round','stroke-linejoin':'round'}))svg.setAttribute(k,v);
+for(const d of ['M4 10 12 3l8 7v11H4Z','M9 21v-8h6v8']){const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',d);svg.appendChild(path)}
+icon.appendChild(svg);label.appendChild(icon);const name=document.createElement('span');name.textContent='Spatial Agent';label.appendChild(name);parent.appendChild(label);
+}
+function resetConversation(id){
+if(selected)chatDrafts.set(selected,$('chatInput').value);
+chatComposing=false;displayedPlanId=null;$('confirmPlan').hidden=true;$('confirmHint').hidden=true;$('sessionOperation').hidden=true;$('sessionHistory').hidden=true;$('chatHistory').replaceChildren();chatSignature='';$('planSummary').hidden=true;$('planContent').replaceChildren();$('summaryContent').hidden=true;$('summaryEmpty').hidden=false;$('conversationTaskState').textContent='';$('showTaskActions').hidden=true;
+$('chatInput').value=chatDrafts.get(id)||'';$('chatNotice').textContent='';$('chatTarget').textContent='Version '+id.slice(0,12);
+$('chatSend').disabled=false;$('chatInput').disabled=false;
+}
+function paintConversation(state){
+if(state.run_id!==selected)return;
+const previous=chatStates.get(selected);
+if(previous&&previous.revision>state.revision)return;
+if(previous&&previous.revision===state.revision&&['completed','failed','interrupted'].includes(previous.turns?.at(-1)?.status)&&state.turns?.at(-1)?.status==='planning')return;
+chatStates.set(selected,state);
+const uncertain=chatUnconfirmed.get(selected);
+if(uncertain&&state.turns?.some(t=>t.request_id===uncertain.request_id)){chatUnconfirmed.delete(selected);if($('chatInput').value.trim()===uncertain.message){$('chatInput').value='';chatDrafts.set(selected,'')}}
+const pending=state.turns?.at(-1)?.status==='planning';
+$('chatSend').disabled=pending||chatSending.has(selected);
+$('chatInput').disabled=chatSending.has(selected);
+const retrySend=chatUnconfirmed.has(selected);$('chatSend').textContent=retrySend?'Retry send':'↑';$('chatSend').className='send-button'+(retrySend?' retry-send':'');$('chatSend').setAttribute('aria-label',retrySend?'Retry send':'Send message');
+$('chatState').textContent=pending?(state.turns?.at(-1)?.phase==='inspecting'?'Inspecting…':'Thinking…'):'Inspect, plan, confirm';
+const signature=JSON.stringify(state);if(signature===chatSignature)return;chatSignature=signature;
+const history=$('chatHistory'),nearBottom=history.scrollHeight-history.scrollTop-history.clientHeight<70;
+history.replaceChildren();
+const latest=state.turns?.at(-1);showPlanSummary(latest?.status==='completed'?latest.result?.plan:null);
+if(!state.turns?.length)chatLine(history,'Ask about this version, or describe a change. I will clarify it and draft a plan.','muted');
+for(const turn of state.turns||[]){
+ const item=document.createElement('article');item.className='chat-turn';history.appendChild(item);
+ chatLine(item,'You','chat-role user-role');chatLine(item,turn.message,'chat-message user-message');
+ chatAgentLabel(item);
+ if(turn.status==='planning')chatLine(item,turn.phase==='inspecting'?'Reading saved scene evidence…':turn.phase==='reasoning'?'Reviewing the evidence…':'Understanding your request…','muted');
+ if(turn.error)chatLine(item,turn.error,'errorbox');
+ const result=turn.result;if(!result)continue;
+ chatLine(item,result.reply,'chat-message');
+ for(const question of result.questions||[])chatLine(item,question,'chat-question');
+ const evidenceImages=(result.evidence||[]).filter(row=>row.kind==='image');
+ if(evidenceImages.length){
+  const section=document.createElement('section');section.className='chat-evidence';
+  chatLine(section,'Evidence','chat-role');
+  const grid=document.createElement('div');grid.className='evidence-grid';section.appendChild(grid);
+  evidenceImages.forEach((row,index)=>{
+   const button=document.createElement('button');button.type='button';button.className='evidence-thumb';button.setAttribute('aria-label','Enlarge evidence image '+(index+1));
+   const img=document.createElement('img');img.src='/artifact?run_id='+encodeURIComponent(row.run_id)+'&path='+encodeURIComponent(row.path);img.alt='Evidence image '+(index+1);img.loading='lazy';img.decoding='async';button.appendChild(img);
+   chatLine(button,String(index+1),'evidence-number');
+   button.onclick=()=>{$('evidenceImage').src=img.src;$('evidenceImage').alt=img.alt;$('evidenceTitle').textContent='Evidence · '+(index+1);$('evidenceDialog').showModal()};
+   grid.appendChild(button);
+  });
+  item.appendChild(section);
+ }
+ if(result.plan){
+  const current=turn===state.turns.at(-1)&&turn.status==='completed',link=document.createElement('button');
+  link.className='chat-plan-link';link.textContent=current?'Plan ready · View summary':'View earlier draft';
+  link.onclick=()=>{if(selected!==state.run_id)return;const latest=chatStates.get(selected)?.turns?.at(-1);showPlanSummary(result.plan,latest?.request_id===turn.request_id&&latest?.status==='completed');revealSummary();$('planSummary').scrollIntoView?.({block:'nearest'})};item.appendChild(link);
+ }
+
+}
+if(nearBottom||state.turns?.length===1)history.scrollTop=history.scrollHeight;
+}
+async function loadConversation(){
+if(!selected||chatLoading)return;
+const id=selected;chatLoading=true;
+try{const state=await api('/api/runs/'+encodeURIComponent(id)+'/conversation');if(selected===id)paintConversation(state)}
+catch(e){if(selected===id)$('chatNotice').textContent=e.message}
+finally{chatLoading=false}
+}
+async function sendConversation(){
+const id=selected,message=$('chatInput').value.trim();
+if(!id||!message||chatSending.has(id))return;
+if(confirmBusy||sessionActionBusy){$('chatNotice').textContent='Wait for the current confirmation to finish, then send your message.';return;}
+$('planSummary').hidden=true;displayedPlanId=null;$('confirmPlan').hidden=true;chatSending.add(id);$('chatSend').disabled=true;$('chatInput').disabled=true;$('chatNotice').textContent='';
+try{
+ let state=chatStates.get(id);
+ if(!state){state=await api('/api/runs/'+encodeURIComponent(id)+'/conversation');chatStates.set(id,state)}
+ if(selected!==id)return;
+ if(state.turns?.at(-1)?.status==='planning')throw Error('Planning is still running. Wait for its response.');
+ let payload=chatUnconfirmed.get(id);
+ if(payload&&payload.message!==message)throw Error('The previous send is unconfirmed. Restore that message and use Retry send, or reload to check it first.');
+ if(!payload){payload={request_id:globalThis.crypto?.randomUUID?.()||('m'+Date.now().toString(36)+Math.random().toString(36).slice(2)),revision:state.revision,message};chatUnconfirmed.set(id,payload)}
+ token=(await api('/api/config')).token;
+ const result=await api('/api/runs/'+encodeURIComponent(id)+'/conversation',payload,430);
+ chatUnconfirmed.delete(id);chatStates.set(id,result);chatDrafts.set(id,'');
+ if(selected===id){$('chatInput').value='';paintConversation(result)}
+}catch(e){if(selected===id)$('chatNotice').textContent=e.message}
+finally{chatSending.delete(id);if(selected===id){$('chatInput').disabled=false;const s=chatStates.get(id);if(s)paintConversation(s);else $('chatSend').disabled=false;await loadConversation()}}
+}
+$('chatSend').onclick=sendConversation;
+$('chatInput').oninput=()=>{if(selected)chatDrafts.set(selected,$('chatInput').value)};
+$('chatInput').oncompositionstart=()=>{chatComposing=true};
+$('chatInput').oncompositionend=()=>{chatComposing=false};
+$('chatInput').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!chatComposing&&e.keyCode!==229&&!e.repeat){e.preventDefault();return sendConversation()}};
+
+(async()=>{try{token=(await api('/api/config')).token;await Promise.all([sources().catch(e=>notice(e.message,true)),scans().catch(e=>notice(e.message,true))]);await refresh();setInterval(refresh,2000)}catch(e){notice(e.message,true)}})();
 </script></body></html>

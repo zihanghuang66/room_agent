@@ -5,6 +5,9 @@ import mimetypes
 import os
 from pathlib import Path
 import secrets
+import selectors
+import time
+import io
 import signal
 import subprocess
 import sys
@@ -31,13 +34,30 @@ class WorkerManager:
     def _tee(process, stream, run_id):
         try:
             with stream, process.stdout:
-                for line in iter(lambda: process.stdout.readline(65536), b''):
+                def emit(line):
                     stream.write(line)
-                    # A disconnected terminal must not prevent retaining the on-disk log.
                     try:
                         print('[' + run_id + '] ' + line.decode('utf-8', errors='replace').rstrip('\n'), flush=True)
                     except (BrokenPipeError, OSError, ValueError):
                         pass
+                try:fd=process.stdout.fileno()
+                except (AttributeError,io.UnsupportedOperation):
+                    for line in iter(lambda:process.stdout.readline(65536),b''):emit(line)
+                    return
+                # A grandchild can inherit stdout after the direct CLI exits.
+                # Drain for at most one second after exit; never retain queue
+                # ownership forever waiting for that unrelated writer's EOF.
+                exited_at=None
+                with selectors.DefaultSelector() as selector:
+                    selector.register(fd,selectors.EVENT_READ)
+                    while True:
+                        if process.poll() is not None:
+                            if exited_at is None:exited_at=time.monotonic()
+                            if time.monotonic()-exited_at>=1:break
+                        if not selector.select(.1):continue
+                        data=os.read(fd,65536)
+                        if not data:break
+                        emit(data)
         except OSError as exc:
             print('[' + run_id + '] 日志写入失败：' + str(exc), file=sys.stderr, flush=True)
 
@@ -51,6 +71,7 @@ class WorkerManager:
                 raise FileNotFoundError('unknown run')
             args = [sys.executable, '-u', '-m', 'room_agent', '--state-root', str(self.root)]
             args += ['resume' if action else 'run', run_id]
+            args += ['--origin', 'web']
             if action:
                 args += ['--action', action]
             stream = (directory / 'console.log').open('ab', buffering=0)
@@ -104,7 +125,15 @@ def make_server(state_root, project, *, host='127.0.0.1', port=8765,
     server.root = Path(state_root).resolve()
     server.project = Path(project).resolve()
     server.service = service if service is not None else Service(server.root)
-    server.worker = worker if worker is not None else WorkerManager(server.root)
+    try:
+        if worker is None:
+            from .task_queue import TaskQueue
+            server.worker = TaskQueue(server.root, server.service, WorkerManager(server.root))
+        else:
+            server.worker = worker
+    except BaseException:
+        server.server_close()
+        raise
     server.source_discovery = source_discovery or _sources
     server.token = secrets.token_urlsafe(32)
     return server
@@ -152,7 +181,22 @@ class Handler(BaseHTTPRequestHandler):
 
     def _run(self, run_id):
         identifier(run_id)
-        return self.server.service.show(run_id)
+        return self._queue_status(self.server.service.show(run_id))
+
+    def _queue_status(self, result):
+        result = dict(result)
+        if hasattr(self.server.worker, 'status'):
+            result.update(self.server.worker.status(result['run_id']))
+            if result.get('queue_status') in ('queued', 'dispatching'):
+                result.update(execution_status=result['queue_status'], current_node='queue')
+            elif result.get('queue_status') == 'running' and result['execution_status'] == 'created':
+                result.update(execution_status='running', current_node='queue')
+            elif result.get('queue_status') == 'failed' and result['execution_status'] not in ('completed', 'failed', 'running'):
+                result.update(execution_status='failed', current_node='queue',
+                              error={'node': 'queue', 'message': result.get('queue_error') or '任务未能启动'})
+            elif result.get('queue_status') == 'interrupted' and result['execution_status'] == 'created':
+                result.update(execution_status='interrupted', current_node='queue')
+        return result
 
     def _artifact(self, run_id, supplied):
         self._run(run_id)
@@ -207,9 +251,14 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/config':
                 return self._send(200, {'token': self.server.token})
             if path == '/api/runs':
-                return self._send(200, self.server.service.list_runs())
+                return self._send(200, [self._queue_status(r) for r in self.server.service.list_runs()])
+            if path == '/api/versions':
+                return self._send(200, self.server.service.versions())
             if path == '/api/sources':
                 return self._send(200, self.server.source_discovery(self.server.project))
+            if path == '/api/scans':
+                from .full_scan import discover_scans
+                return self._send(200, discover_scans(self.server.project))
             if path.startswith('/api/runs/'):
                 parts = path.split('/')
                 run_id = parts[3]
@@ -246,7 +295,8 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/return':
                 run_id = query.get('run_id', [''])[0]
                 status = self._run(run_id)
-                if self.server.worker.busy or status['execution_status'] == 'running':
+                if (status['execution_status'] in ('running', 'queued', 'dispatching') or status.get('worker_finalizing') or
+                        not hasattr(self.server.worker, 'status') and self.server.worker.busy):
                     raise RuntimeError('请等待任务结束或暂停后下载返回包')
                 return self._file(self.server.service.package_return(run_id), attachment=True)
             self._send(404, {'error': 'not found'})
@@ -267,6 +317,16 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(data, dict):
                 raise ValueError('JSON object required')
             path = urlsplit(self.path).path
+            if path == '/api/edit-runs':
+                run = self.server.service.create_edit(data.get('parent_run_id'), data.get('instruction'))
+                return self._send(201, {'run_id': run})
+            if path == '/api/full-runs':
+                archive, scene = data.get('scan_archive'), data.get('scene')
+                prepare = data.get('prepare_only', False)
+                if not isinstance(archive, str) or not isinstance(scene, str) or type(prepare) is not bool:
+                    raise ValueError('请选择扫描文件、填写房间名称并指定检查或重建')
+                run = self.server.service.create_full(archive, scene, self.server.project, prepare_only=prepare)
+                return self._send(201, {'run_id': run})
             if path == '/api/runs':
                 source = data.get('source_run')
                 if not isinstance(source, str) or not source:
@@ -277,6 +337,9 @@ class Handler(BaseHTTPRequestHandler):
                 run = self.server.service.create_review(source, max_batches=batches, repair_seconds=seconds)
                 return self._send(201, {'run_id': run})
             parts = path.split('/')
+            if len(parts) == 5 and parts[:3] == ['', 'api', 'runs'] and parts[4] == 'cancel-queue':
+                self._run(parts[3])
+                return self._send(200, self.server.worker.cancel(parts[3]))
             if len(parts) == 5 and parts[:3] == ['', 'api', 'runs'] and parts[4] in ('start', 'resume'):
                 run_id = parts[3]
                 self._run(run_id)
@@ -298,7 +361,7 @@ class Handler(BaseHTTPRequestHandler):
 def serve(state_root, project, host='127.0.0.1', port=8765):
     server = make_server(state_root, project, host=host, port=port)
     print(f'ROOM_WEB_URL: http://127.0.0.1:{server.server_port}', flush=True)
-    print('浏览器关闭不会中断任务；停止此服务会停止它启动的工作进程。', flush=True)
+    print('任务按提交顺序排队。浏览器关闭不会中断任务；停止服务会保留队列并停止自己的工作进程。', flush=True)
     old_handler = signal.getsignal(signal.SIGTERM)
     def stop(_sig, _frame):
         raise KeyboardInterrupt

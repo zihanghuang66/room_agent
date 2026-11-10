@@ -17,6 +17,16 @@ def can_repair(state, request):
             state.get('repair_termination', 'not_started') in ('not_started', 'completed'))
 
 
+def finish_reason(state, request):
+    if state.get('quality_status') == 'passed':
+        return 'quality_passed'
+    if state.get('repair_termination', 'not_started') not in ('not_started', 'completed'):
+        return 'repair_' + state['repair_termination']
+    if state.get('round', 0) >= request['max_batches']:
+        return 'repair_budget_exhausted'
+    return 'no_actionable_issues'
+
+
 def build_scene_graph(saver, executor, journal, request):
     def stage(name):
         def call(state):
@@ -36,21 +46,34 @@ def build_scene_graph(saver, executor, journal, request):
             result = {**state, **update, 'execution_status': 'running'}
             if name == 'repair':
                 for field in ('room', 'preview', 'round_dir', 'build_stamp', 'selection', 'pairs',
-                              'compare', 'geometry_report', 'geometry_pass', 'visual_review'):
+                              'compare', 'geometry_report', 'geometry_pass', 'visual_review', 'review_stream_error_count'):
                     result.pop(field, None)
                 result.update(round=number+1, quality_status='unreviewed', score=None, issues=[])
             return result
         return call
 
     def decision(state):
+        number = state.get('round', 0)
         if not can_repair(state, request):
-            return {**state, 'execution_status': 'completed', 'next_action': 'finish'}
+            reason = finish_reason(state, request)
+            journal.emit('decision_finished', node='decision', round=number,
+                         action='finish', reason=reason, automatic=True)
+            return {**state, 'execution_status': 'completed', 'next_action': 'finish',
+                    'completion_reason': reason}
+        # interrupt() re-enters this function on resume; do not duplicate the waiting event.
+        if not any(e['kind'] == 'decision_waiting' and e.get('round') == number for e in journal.read()):
+            journal.emit('decision_waiting', node='decision', round=number,
+                         actions=['repair', 'finish'], quality_status=state['quality_status'])
         choice = interrupt({'kind': 'review_ready', 'quality_status': state['quality_status'],
                             'round': state.get('round', 0), 'actions': ['repair', 'finish'],
                             'issues': state.get('issues', [])})
         if choice not in ('repair', 'finish'):
             raise ValueError('action must be repair or finish')
+        reason = 'user_finished' if choice == 'finish' else 'user_requested_repair'
+        journal.emit('decision_finished', node='decision', round=number,
+                     action=choice, reason=reason, automatic=False)
         return {**state, 'next_action': choice,
+                'completion_reason': reason if choice == 'finish' else None,
                 'execution_status': 'completed' if choice == 'finish' else 'running'}
 
     graph = StateGraph(dict)

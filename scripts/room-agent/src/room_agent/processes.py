@@ -12,12 +12,12 @@ def tail(path, limit=6000):
         return f.read(limit).decode(errors='replace')
 
 
-def run_process(command, log, *, seconds, env):
+def run_process(command, log, *, seconds, env, pass_fds=()):
     log = Path(log)
     log.parent.mkdir(parents=True, exist_ok=True)
     with log.open('a') as stream:
         proc = subprocess.Popen(command, env=env, stdin=subprocess.DEVNULL,
-            stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
+            stdout=stream, stderr=subprocess.STDOUT, start_new_session=True, pass_fds=pass_fds)
         started = time.monotonic()
         heartbeat = started + 30
         try:

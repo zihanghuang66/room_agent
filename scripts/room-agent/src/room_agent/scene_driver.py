@@ -41,7 +41,8 @@ def main():
     env.update(LITEREALITY_SCAN=request['scene'], LR_SCENE=str(attempt / 'scenes' / request['scene']))
     os.environ.update(env)
     sys.path.insert(0, str(legacy / 'app/src'))
-    from worker import module, evidence_selection, source_build_stamp, Engine
+    from worker import module, source_build_stamp, Engine
+    from review_targets import evidence_selection, review_prompt
     from litereality_agent.agent.providers import SessionSpec
     from agent_session import recorded_session
 
@@ -62,7 +63,10 @@ def main():
     capture = Path(request['capture'])
     number = state.get('round', 0)
     result, outputs = {}, []
-    if stage == 'preflight':
+    if request.get('operation') == 'scene_edit' and stage in ('inspect_current', 'edit', 'evidence', 'review', 'finalize'):
+        from edit_driver import run_stage
+        result, outputs = run_stage(stage, request, state, attempt)
+    elif stage == 'preflight':
         from runtime import prepare
         prepare(env, attempt / 'runtime.json')
         import importlib
@@ -120,9 +124,10 @@ def main():
         save(rounddir / 'assessment.json', result)
         outputs = [validation, preview / 'Room.portable.blend', preview / 'reopen_verification.json']
     elif stage == 'evidence':
-        selection = evidence_selection(capture, attempt, Path(state['room']))
+        objects = json.loads((Path(state['preview']) / 'room_layout.json').read_text())['objects']
+        selection = evidence_selection(capture, attempt, Path(state['room']), objects)
         result = {'selection': selection}
-        outputs = [attempt / 'evidence/selection.json']
+        outputs = [attempt / 'evidence/selection.json', attempt / 'evidence/targets.json']
     elif stage == 'render':
         room, preview = Path(state['room']), Path(state['preview'])
         frames = ','.join(map(str, state['selection']['frames'])) + ','
@@ -142,21 +147,7 @@ def main():
         objects = json.loads((preview / 'room_layout.json').read_text())['objects']
         objects = list(objects.values()) if isinstance(objects, dict) else objects
         ids = [x['id'] for x in objects]
-        prompt = ('Independently judge this saved reconstruction against ALL paired capture photos. '
-            'Each pair is RENDER on the left and REAL photograph on the right at the same camera pose. '
-            'Read-only review: do not edit files, call other models or trust author self-evaluation. '
-            'Check every listed object, merged member, opening, support surface, missing item, scale and material. '
-            'Prioritize lighting/hotspots and large shapes before small accessories. '
-            'Inspect headboard, bedside cabinet, curtains, bedding and ground contacts in nominated frames. '
-            'Distinguish visible defects from insufficient evidence; hidden/unresolved items use priority=evidence. '
-            'Do not invent geometry. Static support validation does not prove visual fidelity or dynamic stability. '
-            'Passing requires score>=8, zero issues, all_objects_reviewed=true and every object ID verified. '
-            'If an object cannot be verified, report an evidence issue and all_objects_reviewed=false. '
-            'Return only JSON {"pass":bool,"score":number,"all_objects_reviewed":bool,'
-            '"reviewed_object_ids":[IDs],"issues":[{"object_ids":[IDs],'
-            '"priority":"support|lighting|large_appearance|small_details|evidence","defect":"observation with frame IDs"}]}. '
-            'Selection: ' + json.dumps(state['selection'], ensure_ascii=False) +
-            '\nLayout: ' + json.dumps(objects, ensure_ascii=False))
+        prompt = review_prompt(objects, state['selection'])
         spec = SessionSpec(prompt=prompt, cwd=attempt, read_roots=(capture,), image_paths=tuple(map(Path, state['pairs'])),
             read_only=True, setting_sources=(), file_tools=('Read',), timeout_seconds=600, step_budget=60)
         session = asyncio.run(recorded_session(spec, attempt / 'review_session', 'quality'))
@@ -166,7 +157,8 @@ def main():
         if source_build_stamp(room, preview) != state['build_stamp']:
             raise RuntimeError('Review changed source/build; verdict invalid')
         result = {'quality_status': 'passed' if review_passes(review, ids) else 'not_passed',
-                  'score': review['score'], 'issues': review['issues'], 'visual_review': str(attempt / 'visual_review.json')}
+                  'score': review['score'], 'issues': review['issues'], 'visual_review': str(attempt / 'visual_review.json'),
+                  'review_stream_error_count': session.get('stream_error_count', 0)}
         save(attempt / 'visual_review.json', review)
         save(Path(state['round_dir']) / 'assessment.json', {**result, 'compare': state['compare'], 'geometry_report': state['geometry_report']})
         outputs = [attempt / 'visual_review.json']

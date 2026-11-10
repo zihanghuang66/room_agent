@@ -94,7 +94,7 @@ def test_web_module_is_available():
 
 
 def test_index_and_read_only_status_endpoints(web):
-    assert 'Room Agent'.encode() in request(web, '/')[2]
+    assert 'Spatial Agent'.encode() in request(web, '/')[2]
     assert json.loads(request(web, '/api/runs')[2])[0]['quality_status'] == 'not_passed'
     assert json.loads(request(web, '/api/sources')[2])[0]['scene'] == 'room_004'
     assert json.loads(request(web, '/api/runs/run1/events?after=2')[2]) == []
@@ -228,6 +228,8 @@ def test_real_http_cli_checkpoint_round_trip(tmp_path, monkeypatch, capsys):
         assert response[0] == 202, response[2]
         completed = wait_for('completed')
         assert completed['quality_status'] == 'unreviewed'
+        actions = [e for e in Service(root).events(run_id) if e['kind'] == 'action_received']
+        assert actions[-1]['origin'] == 'web' and actions[-1]['action'] == 'finish'
         assert (source / 'Room.py').read_bytes() == original
         assert len(list(source.iterdir())) == 1
     finally:
@@ -260,14 +262,15 @@ class Element {
   appendChild(v){this.children.push(v);}
   replaceChildren(...values){this.text='';this.children=values;}
 }
-const elements={reviewScore:new Element(),reviewSummary:new Element(),reviewIssues:new Element()};
+const qualityNames={};
+const elements={reviewBadge:new Element(),reviewProgress:new Element(),reviewScore:new Element(),reviewSummary:new Element(),reviewIssues:new Element()};
 const $=id=>elements[id];
 const document={createElement:()=>new Element()};
 ''' + 'function reviewPanel(status)' + function + '''
 reviewPanel({issues:[{priority:'support',object_ids:['Bed0'],defect:'脚部离地'}]});
 assert.equal(elements.reviewScore.textContent,'—');
-assert.match(elements.reviewSummary.textContent,/尚未完成独立视觉评审/);
-assert.match(elements.reviewIssues.textContent,/几何/);
+assert.match(elements.reviewSummary.textContent,/Independent visual review has not completed/);
+assert.match(elements.reviewIssues.textContent,/Geometry/);
 assert.match(elements.reviewIssues.textContent,/Bed0/);
 assert.match(elements.reviewIssues.textContent,/脚部离地/);
 reviewPanel({score:8.4,issues:[]});
@@ -276,3 +279,41 @@ assert.doesNotMatch(elements.reviewIssues.textContent,/脚部离地/);
 '''
     result = subprocess.run([node, '-e', program], capture_output=True, text=True, timeout=10)
     assert result.returncode == 0, result.stderr
+
+
+def test_terminal_and_repair_labels_do_not_imply_a_failure():
+    import shutil
+    import subprocess
+    html = (Path(__file__).resolve().parents[1] / 'src/room_agent/dashboard.html').read_text()
+    node = shutil.which('node')
+    if node is None:
+        pytest.skip('Node is needed only for browser presentation tests')
+    functions = 'function repairStatusText(status)' + html.split('function repairStatusText(status)', 1)[1].split('function paint(status)', 1)[0]
+    program = "const assert=require('node:assert/strict');\n" + functions + '''
+assert.equal(repairStatusText({repair_termination:'not_started'}),'No repair started');
+assert.equal(repairStatusText({current_node:'repair',execution_status:'running'}),'Repair in progress');
+assert.match(completionReasonText('user_finished'),/Ended by your choice/);
+assert.match(completionReasonText('legacy_unspecified'),/not recorded by the older version/);
+assert.match(completionReasonText('repair_timeout'),/Review completed after a repair timeout/);
+'''
+    result = subprocess.run([node, '-e', program], capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, result.stderr
+
+
+def test_full_scan_creation_and_listing_are_scoped_to_project(web, tmp_path):
+    import tarfile
+    import io
+    raw = tmp_path / 'data/raw/room_new'
+    raw.mkdir(parents=True)
+    archive = raw / 'scan.tar'
+    with tarfile.open(archive, 'w') as tf:
+        info=tarfile.TarInfo('capture/file.txt');info.size=1
+        tf.addfile(info,io.BytesIO(b'x'))
+    calls=[]
+    web[1].create_full=lambda archive,scene,project,prepare_only=False: (calls.append((archive,scene,project,prepare_only)) or 'run1')
+    status,_,body=request(web,'/api/scans')
+    assert status==200 and json.loads(body)[0]['path']==str(archive)
+    status,_,_=request(web,'/api/full-runs','POST',{'scan_archive':str(archive),'scene':'room_new','prepare_only':True},auth(web))
+    assert status==201 and calls[-1]==(str(archive),'room_new',tmp_path,True)
+    status,_,_=request(web,'/api/full-runs','POST',{'scan_archive':str(archive),'scene':'room_new','prepare_only':'yes'},auth(web))
+    assert status==400

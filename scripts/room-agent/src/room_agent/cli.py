@@ -19,6 +19,15 @@ def main():
     review.add_argument('source_run')
     review.add_argument('--max-batches', type=int, default=1)
     review.add_argument('--repair-seconds', type=int, default=900)
+    edit = commands.add_parser('create-edit', help='Create a child scene version without reconstruction')
+    edit.add_argument('--parent-run', required=True)
+    edit.add_argument('--instruction', required=True)
+    commands.add_parser('versions')
+    full = commands.add_parser('create-full', help='Create an immutable legacy full-scan request')
+    full.add_argument('--scan-archive', required=True)
+    full.add_argument('--scene', required=True)
+    full.add_argument('--project', type=Path, required=True)
+    full.add_argument('--prepare-only', action='store_true')
     serve = commands.add_parser('serve')
     serve.add_argument('--project', type=Path, required=True)
     serve.add_argument('--port', type=int, default=8765)
@@ -26,6 +35,8 @@ def main():
     for name in ('run', 'resume', 'show', 'events', 'pack'):
         command = commands.add_parser(name)
         command.add_argument('run_id')
+        if name in ('run', 'resume'):
+            command.add_argument('--origin', choices=['cli', 'web'], default='cli')
         if name == 'resume':
             command.add_argument('--action', choices=['finish', 'cancel', 'repair'])
         if name == 'events':
@@ -44,12 +55,18 @@ def main():
         if args.command == 'check-storage':
             from .preflight import storage_probe
             result = storage_probe(Path(args.state_root) / 'checks/storage')
+        elif args.command == 'versions':
+            result = service.versions()
+        elif args.command == 'create-edit':
+            result = {'run_id': service.create_edit(args.parent_run, args.instruction)}
         elif args.command == 'create-review':
             result = {'run_id': service.create_review(args.source_run, max_batches=args.max_batches, repair_seconds=args.repair_seconds)}
+        elif args.command == 'create-full':
+            result = {'run_id': service.create_full(args.scan_archive, args.scene, args.project, args.prepare_only)}
         elif args.command == 'create':
             result = {'run_id': service.create(args.room, args.source)}
         elif args.command in ('run', 'resume'):
-            result = service.execute(args.run_id, action=getattr(args, 'action', None))
+            result = service.execute(args.run_id, action=getattr(args, 'action', None), action_origin=args.origin)
         elif args.command == 'show':
             result = service.show(args.run_id)
         elif args.command == 'events':
@@ -62,14 +79,14 @@ def main():
         if not isinstance(exc, (Exception, KeyboardInterrupt)):
             raise
         print(json.dumps({'error': type(exc).__name__, 'message': str(exc)}, ensure_ascii=False), file=sys.stderr)
-        if args.command in ('run', 'resume'):
+        if args.command in ('run', 'resume') and args.origin != 'web':
             try:
                 print('RETURN_TAR: ' + str(service.package_return(args.run_id)), flush=True)
             except Exception as pack_error:
                 print('RETURN_PACK_ERROR: ' + str(pack_error), file=sys.stderr)
         raise SystemExit(1)
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    if args.command in ('run', 'resume') and result.get('operation') == 'saved_scene_review':
+    if args.command in ('run', 'resume') and args.origin != 'web' and result.get('operation') in ('saved_scene_review', 'full_scan', 'scene_edit'):
         try:
             print('RETURN_TAR: ' + str(service.package_return(args.run_id)), flush=True)
         except Exception as exc:

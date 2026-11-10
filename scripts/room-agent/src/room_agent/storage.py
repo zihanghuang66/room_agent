@@ -58,7 +58,7 @@ def room_lock(root, room):
         except BlockingIOError:
             raise RuntimeError('room is busy: ' + room) from None
         try:
-            yield
+            yield stream
         finally:
             fcntl.flock(stream, fcntl.LOCK_UN)
 

@@ -9,7 +9,7 @@ from .storage import atomic_json, room_lock
 from .saved_scene import file_hash
 
 
-def make_archive(directory, destination):
+def make_archive(directory, destination, *, skip_trees=()):
     directory, destination = Path(directory).resolve(), Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temp = destination.with_name(destination.name + '.' + uuid4().hex + '.tmp')
@@ -20,7 +20,7 @@ def make_archive(directory, destination):
         with temp.open('wb') as raw, gzip.GzipFile(fileobj=raw, filename='', mode='wb', mtime=0) as zipped:
             with tarfile.open(fileobj=zipped, mode='w') as archive:
                 for base, dirs, files in os.walk(directory, followlinks=False):
-                    dirs[:] = sorted(d for d in dirs if d not in excluded and not (Path(base)/d).is_symlink()
+                    dirs[:] = sorted(d for d in dirs if (Path(base)/d).relative_to(directory).as_posix() not in skip_trees and d not in excluded and not (Path(base)/d).is_symlink()
                                      and not (d == 'work' and Path(base) != directory))
                     for name in sorted(files):
                         path = Path(base) / name
@@ -44,5 +44,8 @@ def package_return(service, run_id):
     with room_lock(service.root, request['room_id']):
         atomic_json(directory / 'result.json', service.show(run_id))
         project = Path(request.get('project', service.root.parent.parent))
-        dest = project / 'return_output' / f'room_agent_stage2_{run_id}.tar.gz'
-        return make_archive(directory, dest)
+        scan = request.get('workflow_version') == 'full-scan-graph/1'
+        prefix = 'room_agent_stage4a' if request['operation'] == 'scene_edit' else 'room_agent_stage3a' if scan else 'room_agent_stage2'
+        dest = project / 'return_output' / f'{prefix}_{run_id}.tar.gz'
+        skip = ['work/failed'] + [str(p.relative_to(directory)) for p in (directory/'published').glob('*/scenes')] if scan else []
+        return make_archive(directory, dest, skip_trees=skip)

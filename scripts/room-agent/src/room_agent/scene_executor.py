@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 from uuid import uuid4
 
-from .saved_scene import file_hash, tree_hashes, legacy_root, engine_hash, capture_names
+from .saved_scene import file_hash, tree_hashes, source_tree_hashes, legacy_root, engine_hash, capture_names, request_source_hashes
 from .storage import atomic_json, read_json, digest
 from .processes import run_process
 
@@ -15,8 +15,8 @@ class SceneExecutor:
         self.work = self.directory / 'work'
 
     def verify(self):
-        if self.request['engine_sha256'] != engine_hash():
-            raise ValueError('Execution code version changed; do not resume with different code')
+        from .engine_compatibility import verify_engine
+        verify_engine(self.request['engine_sha256'],engine_hash(),'saved_scene')
         for receipt in (self.directory / 'receipts').glob('*.json'):
             self._verify_receipt(read_json(receipt))
         if capture_names(self.request['capture']) != set(self.request['capture_files']):
@@ -94,7 +94,7 @@ class SceneExecutor:
                 raise RuntimeError('Insufficient free disk space for immutable source snapshots')
             temp = self.work / ('initial.tmp-' + uuid4().hex)
             for key, leaf in [('source', 'room'), ('seed', 'seed')]:
-                if tree_hashes(self.request[key]) != self.request[key + '_files']:
+                if request_source_hashes(self.request, key) != self.request[key + '_files']:
                     raise ValueError('Original saved input changed; create a new request')
                 for relative in self.request[key + '_files']:
                     dest = temp / leaf / relative
@@ -132,6 +132,7 @@ class SceneExecutor:
         env = dict(os.environ, PYTHONUNBUFFERED='1', PYTHONDONTWRITEBYTECODE='1')
         # Never pass the orchestration venv PYTHONPATH into the existing application environment.
         env.pop('PYTHONPATH', None)
-        run_process([python, '-u', str(driver), str(payload_path)], log, seconds=seconds, env=env)
+        run_process([python, '-u', str(driver), str(payload_path)], log, seconds=seconds, env=env,
+                    pass_fds=getattr(self, 'lock_fds', ()))
         result = read_json(attempt / 'stage_result.json')
         return result['state'], result['outputs']
